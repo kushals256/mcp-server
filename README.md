@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Dataset Analysis MCP Server
 
 This is a Model Context Protocol (MCP) server designed for dataset analysis. It implements a stateful workflow, allowing users to load datasets, perform operations, and save results or pipeline configurations.
@@ -105,3 +106,8 @@ This server uses a **Global State Manager** (`utils.state_manager.GlobalStateMan
 1.  **Discovery**: usage of `list_datasets` and `load_dataset_metadata` to find and load data into the global state.
 2.  **Analysis**: (Future tools) Perform operations on the loaded `DataFrame`.
 3.  **Persistence**: Use `save_processed_dataset` to save the modified state or `export_pipeline_config` to save the sequence of operations.
+=======
+Hi, kusla!
+
+hi yonki boi!
+>>>>>>> 1ff259d257d2bf222466c478feb5a9dfe1ec8566
