@@ -18,5 +18,9 @@ from tools.eda import describe_dataset, correlation_analysis
 mcp.tool()(describe_dataset)
 mcp.tool()(correlation_analysis)
 
+# Register Phase 4 Tools (Data Quality)
+from tools.data_quality import detect_data_quality_issues
+mcp.tool()(detect_data_quality_issues)
+
 if __name__ == "__main__":
     mcp.run()
