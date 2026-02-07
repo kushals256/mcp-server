@@ -1,0 +1,11 @@
+age,score,category,description
+25,85.5,A,Short
+30,90.0,B,Medium length
+35,88.5,A,Very long description text here
+40,92.0,C,Short
+45,70.0,A,Medium
+100,95.0,B,Longer text
+-5,80.0,D,S
+25,85.0,A,M
+30,90.0,E,L
+25,85.0,A,XL

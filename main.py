@@ -13,5 +13,9 @@ mcp.tool()(load_dataset_metadata)
 mcp.tool()(save_processed_dataset)
 mcp.tool()(export_pipeline_config)
 
+# Register Phase 3 Tools
+from tools.eda import describe_dataset
+mcp.tool()(describe_dataset)
+
 if __name__ == "__main__":
     mcp.run()
