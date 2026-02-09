@@ -21,6 +21,9 @@ mcp.tool()(correlation_analysis)
 # Register Phase 4 Tools (Data Quality)
 from tools.data_quality import detect_data_quality_issues
 mcp.tool()(detect_data_quality_issues)
+# Register Phase 4 Tools
+from tools.remove_outliers import remove_outliers
+mcp.tool()(remove_outliers)
 
 if __name__ == "__main__":
     mcp.run()
