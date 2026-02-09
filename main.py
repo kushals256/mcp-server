@@ -18,6 +18,9 @@ from tools.eda import describe_dataset, correlation_analysis
 mcp.tool()(describe_dataset)
 mcp.tool()(correlation_analysis)
 
+# Register Phase 4 Tools (Data Quality)
+from tools.data_quality import detect_data_quality_issues
+mcp.tool()(detect_data_quality_issues)
 # Register Phase 4 Tools
 from tools.remove_outliers import remove_outliers
 mcp.tool()(remove_outliers)

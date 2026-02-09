@@ -8,5 +8,8 @@ dependencies = [
     "fastapi>=0.128.0",
     "mcp>=1.26.0",
     "pandas>=2.3.3",
+    "pyyaml>=6.0.0",
+    "scikit-learn>=1.0.0",
+    "scipy>=1.0.0",
     "uvicorn>=0.40.0",
 ]
