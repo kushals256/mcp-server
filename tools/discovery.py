@@ -1,12 +1,22 @@
+"""
+Dataset Discovery Tools for MCP Server.
+
+This module provides tools for listing available datasets and loading dataset metadata
+into the server's global state. It implements Phase 1 of the dataset analysis workflow.
+
+Functions:
+    list_datasets: List all CSV/JSON files in the data directory
+    load_dataset_metadata: Load a dataset and return its metadata
+"""
+
 import os
 import pandas as pd
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
+
+from config import DATA_DIR
 from utils.state_manager import GlobalStateManager
 
-# Resolve DATA_DIR relative to the project root (assuming tools/ is one level deep)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "data")
 
 class DatasetInfo(BaseModel):
     filename: str = Field(..., description="Name of the file including extension")
@@ -24,7 +34,16 @@ class DatasetMetadata(BaseModel):
 def list_datasets() -> List[DatasetInfo]:
     """
     List all available CSV/JSON files in the data directory.
-    Returns a list of DatasetInfo models.
+    
+    This is typically the first tool called in the dataset analysis workflow.
+    It scans the configured DATA_DIR for supported file formats.
+    
+    Returns:
+        List[DatasetInfo]: List of DatasetInfo objects containing filename and size.
+                          Returns a debug message if no files are found.
+    
+    Note:
+        Supported formats: .csv, .json
     """
     if not os.path.exists(DATA_DIR):
         return []
@@ -47,10 +66,27 @@ def list_datasets() -> List[DatasetInfo]:
 def load_dataset_metadata(filename: str) -> DatasetMetadata:
     """
     Load a dataset into the server's memory and return its metadata.
+    
+    This function loads the entire dataset into memory and stores it in the
+    GlobalStateManager singleton for subsequent operations. It also calculates
+    and returns comprehensive metadata about the dataset.
+    
     Args:
-        filename: Name of the file in the data directory.
+        filename: Name of the file in the data directory (e.g., 'data.csv' or 'data.json').
+    
     Returns:
-        DatasetMetadata model including columns, types, missing values, and row count.
+        DatasetMetadata: Object containing:
+            - filename: Name of the loaded file
+            - columns: List of column names
+            - dtypes: Dictionary mapping column names to data types
+            - missing_percentages_sample: Dictionary of missing value percentages per column
+            - estimated_row_count: Total number of rows
+            - preview: First 5 rows as list of dictionaries
+    
+    Raises:
+        FileNotFoundError: If the specified file doesn't exist in DATA_DIR.
+        ValueError: If the file format is not supported.
+        Exception: For other errors during file reading or processing.
     """
     path = os.path.join(DATA_DIR, filename)
     if not os.path.exists(path):

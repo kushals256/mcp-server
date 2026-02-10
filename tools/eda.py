@@ -1,10 +1,26 @@
+"""
+Exploratory Data Analysis (EDA) Tools for MCP Server.
+
+This module provides comprehensive statistical analysis tools for datasets,
+including descriptive statistics and correlation analysis. It implements
+Phase 3 (Analysis) of the dataset analysis workflow.
+
+Functions:
+    describe_dataset: Generate comprehensive statistical summaries
+    correlation_analysis: Analyze correlations between features
+    cramers_v: Calculate Cramér's V for categorical-categorical association
+    correlation_ratio: Calculate correlation ratio (eta) for categorical-numerical association
+"""
+
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Union, Optional
 from scipy import stats
 from sklearn.metrics import mutual_info_score
+
 from utils.state_manager import GlobalStateManager
 from tools.discovery import load_dataset_metadata
+
 
 def describe_dataset(dataset_name: str) -> Dict[str, Any]:
     """
@@ -108,7 +124,23 @@ def describe_dataset(dataset_name: str) -> Dict[str, Any]:
     return summary
 
 def cramers_v(x: pd.Series, y: pd.Series) -> float:
-    """Calculate Cramér's V statistic for categorical-categorical association."""
+    """
+    Calculate Cramér's V statistic for categorical-categorical association.
+    
+    Cramér's V is a measure of association between two nominal variables,
+    ranging from 0 (no association) to 1 (perfect association).
+    
+    Args:
+        x: First categorical variable as pandas Series
+        y: Second categorical variable as pandas Series
+    
+    Returns:
+        float: Cramér's V value between 0 and 1
+    
+    Note:
+        This is a bias-corrected version of Cramér's V that adjusts for
+        sample size and dimensionality.
+    """
     confusion_matrix = pd.crosstab(x, y)
     chi2 = stats.chi2_contingency(confusion_matrix)[0]
     n = confusion_matrix.sum().sum()
@@ -121,7 +153,24 @@ def cramers_v(x: pd.Series, y: pd.Series) -> float:
         return np.sqrt(phi2corr / min((kcorr-1), (rcorr-1)))
 
 def correlation_ratio(categories: pd.Series, measurements: pd.Series) -> float:
-    """Calculate Correlation Ratio (eta) for categorical-numerical association."""
+    """
+    Calculate Correlation Ratio (eta) for categorical-numerical association.
+    
+    The correlation ratio measures the strength of association between a
+    categorical variable and a numerical variable. It ranges from 0 (no association)
+    to 1 (perfect association).
+    
+    Args:
+        categories: Categorical variable as pandas Series
+        measurements: Numerical variable as pandas Series
+    
+    Returns:
+        float: Correlation ratio (eta) value between 0 and 1
+    
+    Note:
+        Similar to ANOVA's eta-squared, this measures the proportion of variance
+        in the numerical variable explained by the categorical variable.
+    """
     fcat, _ = pd.factorize(categories)
     cat_num = np.max(fcat) + 1
     y_avg_array = np.zeros(cat_num)
