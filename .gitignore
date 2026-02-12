@@ -8,3 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
+.kiro/settings/mcp.json
+.gitignore
+.vscode/mcp.json
