@@ -61,6 +61,14 @@ mcp.tool()(encode_categorical_feature)
 mcp.tool()(train_test_split)
 
 
+# Register Phase 5 Tools (Feature Engineering)
+from tools.feature_engineering import create_feature
+mcp.tool()(create_feature)
+
+# Register Phase 6 Tools (Validation & Safety)
+from tools.validation import validate_action
+mcp.tool()(validate_action)
+
 if __name__ == "__main__":
     mcp.run()
 
