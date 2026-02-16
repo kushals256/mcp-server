@@ -20,6 +20,7 @@ from tools.eda import describe_dataset, correlation_analysis
 from tools.data_quality import detect_data_quality_issues
 from tools.remove_outliers import remove_outliers
 from tools.cast_column_type import cast_column_type
+from tools.encode_categorical import encode_categorical_feature
 
 # ============================================================================
 # Initialize MCP Server
@@ -52,6 +53,7 @@ mcp.tool()(correlation_analysis)
 # Clean data and remove outliers
 mcp.tool()(remove_outliers)
 mcp.tool()(cast_column_type)
+mcp.tool()(encode_categorical_feature)
 
 
 if __name__ == "__main__":
