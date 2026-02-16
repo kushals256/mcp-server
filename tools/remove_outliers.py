@@ -1,10 +1,32 @@
+"""
+Outlier Removal Tools for MCP Server.
+
+This module provides statistical methods for removing outliers from datasets.
+It implements Phase 4 (Transformation) of the dataset analysis workflow.
+
+Supported methods:
+    - Z-score: Removes data points with |Z| > threshold
+    - IQR: Removes data outside [Q1 - threshold*IQR, Q3 + threshold*IQR]
+
+Functions:
+    remove_outliers: Remove outliers from a specified column using statistical methods
+"""
+
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, Literal
+
+from config import DEFAULT_ZSCORE_THRESHOLD, DEFAULT_IQR_MULTIPLIER
 from utils.state_manager import GlobalStateManager
 from tools.discovery import load_dataset_metadata
 
-def remove_outliers(dataset_name: str, column: str, method: Literal["zscore", "iqr"], threshold: float = 3.0) -> Dict[str, Any]:
+
+def remove_outliers(
+    dataset_name: str,
+    column: str,
+    method: Literal["zscore", "iqr"],
+    threshold: float = DEFAULT_ZSCORE_THRESHOLD
+) -> Dict[str, Any]:
     """
     Remove outliers from a dataset using Statistical methods (Z-Score or IQR).
     

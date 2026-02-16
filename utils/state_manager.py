@@ -1,8 +1,36 @@
+"""
+Global State Management for MCP Server.
+
+This module provides a singleton class that manages the in-memory state of the
+current dataset and pipeline history. This allows tools to share data without
+passing large DataFrames between client and server.
+
+Classes:
+    GlobalStateManager: Singleton for managing dataset state and operation history
+"""
+
 import pandas as pd
 from typing import Optional, List, Dict, Any
 import copy
 
+
 class GlobalStateManager:
+    """
+    Singleton class for managing the global state of the MCP server.
+    
+    This class maintains:
+        - Current dataset in memory (pandas DataFrame)
+        - Dataset name/metadata
+        - Pipeline history (all operations performed)
+    
+    The singleton pattern ensures that all tools access the same state instance,
+    enabling stateful workflow across multiple tool calls.
+    
+    Usage:
+        manager = GlobalStateManager()  # Always returns the same instance
+        manager.load_data(df, "data.csv")
+        df = manager.get_data()
+    """
     _instance = None
     
     def __new__(cls):
@@ -15,22 +43,84 @@ class GlobalStateManager:
         self._current_df: Optional[pd.DataFrame] = None
         self._current_dataset_name: Optional[str] = None
         self._pipeline_history: List[Dict[str, Any]] = []
+        
+        # Split state
+        self._test_df: Optional[pd.DataFrame] = None
+        self._is_split: bool = False
 
     def load_data(self, df: pd.DataFrame, name: str):
-        """Load a dataframe into memory."""
+        """
+        Load a dataframe into memory and log the action.
+        Resets split state since a new dataset is loaded.
+        
+        Args:
+            df: Pandas DataFrame to store
+            name: Name/identifier for the dataset (e.g., filename)
+        """
         self._current_df = df
         self._current_dataset_name = name
+        
+        # Reset split state on new load
+        self._test_df = None
+        self._is_split = False
+        
         self.log_action("load_data", {"dataset_name": name})
 
+    def set_split_data(self, train_df: pd.DataFrame, test_df: pd.DataFrame, split_metadata: Dict[str, Any]):
+        """
+        Set the state to a split dataset (train/test).
+        
+        Args:
+            train_df: Training set (will become the active dataset)
+            test_df: Test set (stored separately)
+            split_metadata: Metadata about the split (test_size, random_state, etc.)
+        
+        Raises:
+            ValueError: If dataset is already split (must reload to split again)
+        """
+        if self._is_split:
+            raise ValueError("Dataset is already split. Please reload the dataset to start a fresh split.")
+            
+        # Store COPIES to ensure immutability
+        self._current_df = train_df.copy()
+        self._test_df = test_df.copy()
+        self._is_split = True
+        
+        self.log_action("train_test_split", split_metadata)
+
     def get_data(self) -> Optional[pd.DataFrame]:
-        """Get the current dataframe."""
+        """
+        Get the current dataframe from memory.
+        If split, this returns the TRAINING set.
+        
+        Returns:
+            The current DataFrame if loaded, None otherwise
+        """
         return self._current_df
+        
+    def get_test_data(self) -> Optional[pd.DataFrame]:
+        """
+        Get the test dataset from memory (if split exists).
+        Returns a COPY to prevent accidental mutation.
+        
+        Returns:
+            The test DataFrame if split, None otherwise
+        """
+        if self._test_df is not None:
+             return self._test_df.copy()
+        return None
     
     def get_dataset_name(self) -> Optional[str]:
         return self._current_dataset_name
 
     def log_action(self, tool: str, params: Dict[str, Any]):
-        """Log an action to the pipeline history."""
+        """
+        Log an action to the pipeline history.
+        
+        Args:
+            tool: Name of the tool/operation
+            params: Dictionary of parameters used in the operation
+        """
         self._pipeline_history.append({
             "tool": tool,
             "params": params
@@ -40,4 +130,5 @@ class GlobalStateManager:
         return self._pipeline_history
 
     def clear_state(self):
+        """Clear all state and reset to initial values."""
         self.initialize()

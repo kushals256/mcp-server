@@ -1,13 +1,60 @@
 # Python-generated files
 __pycache__/
 *.py[oc]
+*.so
+*~
 build/
 dist/
 wheels/
 *.egg-info
+*.egg
 
 # Virtual environments
 .venv
 .kiro/settings/mcp.json
 .gitignore
 .vscode/mcp.json
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project-specific
+data/*
+!data/.gitkeep
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Logs
+*.log
+
+# Distribution / packaging
+.Python
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+

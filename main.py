@@ -1,29 +1,65 @@
+"""
+Dataset Analysis MCP Server - Main Entry Point.
+
+This is the entry point for the MCP server. It initializes the FastMCP server
+and registers all tool functions organized by workflow phase.
+
+Workflow Phases:
+    Phase 1: Discovery - List and load datasets
+    Phase 2: Persistence - Save results and export configs
+    Phase 3: Analysis - EDA and data quality detection
+    Phase 4: Transformation - Data cleaning and outlier removal
+"""
+
 from mcp.server.fastmcp import FastMCP
+
+from config import SERVER_NAME
 from tools.discovery import list_datasets, load_dataset_metadata
-from tools.persistence import save_processed_dataset, export_pipeline_config
+from tools.save_dataset import save_processed_dataset, export_pipeline_config
+from tools.eda import describe_dataset, correlation_analysis
+from tools.data_quality import detect_data_quality_issues
+from tools.data_quality import detect_data_quality_issues
+from tools.remove_outliers import remove_outliers
+from tools.cast_column_type import cast_column_type
+from tools.encode_categorical import encode_categorical_feature
+from tools.train_test_split import train_test_split
 
-# Initialize FastMCP server
-mcp = FastMCP("Dataset Analysis MCP")
+# ============================================================================
+# Initialize MCP Server
+# ============================================================================
 
-# Register Phase 1 Tools
+mcp = FastMCP(SERVER_NAME)
+
+
+# ============================================================================
+# Register Tools (by workflow phase)
+# ============================================================================
+
+# Phase 1: Discovery
+# List available datasets and load metadata into global state
 mcp.tool()(list_datasets)
 mcp.tool()(load_dataset_metadata)
 
-# Register Phase 2 Tools
+# Phase 2: Persistence
+# Save processed data and export pipeline configurations
 mcp.tool()(save_processed_dataset)
 mcp.tool()(export_pipeline_config)
 
-# Register Phase 3 Tools
-from tools.eda import describe_dataset, correlation_analysis
+# Phase 3: Analysis
+# Perform exploratory data analysis and detect quality issues
 mcp.tool()(describe_dataset)
+mcp.tool()(detect_data_quality_issues)
 mcp.tool()(correlation_analysis)
 
-# Register Phase 4 Tools (Data Quality)
-from tools.data_quality import detect_data_quality_issues
-mcp.tool()(detect_data_quality_issues)
-# Register Phase 4 Tools
-from tools.remove_outliers import remove_outliers
+# Phase 4: Transformation
+# Clean data and remove outliers
+# Phase 4: Transformation
+# Clean data and remove outliers
 mcp.tool()(remove_outliers)
+mcp.tool()(cast_column_type)
+mcp.tool()(encode_categorical_feature)
+mcp.tool()(train_test_split)
+
 
 # Register Phase 5 Tools (Feature Engineering)
 from tools.feature_engineering import create_feature
@@ -35,3 +71,4 @@ mcp.tool()(validate_action)
 
 if __name__ == "__main__":
     mcp.run()
+

@@ -1,8 +1,40 @@
+"""
+Data Quality Detection Tools for MCP Server.
+
+This module provides automated detection of data quality issues including
+missing values, outliers, high cardinality columns, and duplicate rows.
+It implements Phase 3 (Analysis) of the dataset analysis workflow.
+
+Functions:
+    detect_data_quality_issues: Main function to detect all quality issues
+    
+Helper Functions (Internal):
+    _detect_outliers_adaptive: Adaptively select outlier detection method
+    _detect_outliers_iqr: IQR-based outlier detection
+    _detect_outliers_zscore: Z-score based outlier detection
+"""
+
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List
+
+from config import (
+    MISSING_VALUES_THRESHOLDS,
+    OUTLIER_THRESHOLDS,
+    HIGH_CARDINALITY_RATIO,
+    HIGH_CARDINALITY_ABSOLUTE,
+    DUPLICATE_ROWS_THRESHOLDS,
+    MIN_OUTLIER_DETECTION_SAMPLES,
+    SKEWNESS_THRESHOLD,
+    KURTOSIS_THRESHOLD,
+    NEAR_NORMAL_SKEWNESS,
+    NEAR_NORMAL_KURTOSIS,
+    DEFAULT_IQR_MULTIPLIER,
+    DEFAULT_ZSCORE_THRESHOLD, MIN_SAMPLE_SIZE_STATS
+)
 from utils.state_manager import GlobalStateManager
 from tools.discovery import load_dataset_metadata
+
 
 
 def detect_data_quality_issues(dataset_name: str) -> Dict[str, Any]:
@@ -43,10 +75,10 @@ def detect_data_quality_issues(dataset_name: str) -> Dict[str, Any]:
         if missing_count > 0:
             missing_pct = (missing_count / total_rows) * 100
             
-            # Severity: <5% = low, 5-20% = medium, >20% = high
-            if missing_pct < 5:
+            # Severity thresholds from config
+            if missing_pct < MISSING_VALUES_THRESHOLDS["low"]:
                 severity = "low"
-            elif missing_pct < 20:
+            elif missing_pct < MISSING_VALUES_THRESHOLDS["medium"]:
                 severity = "medium"
             else:
                 severity = "high"
@@ -68,7 +100,7 @@ def detect_data_quality_issues(dataset_name: str) -> Dict[str, Any]:
     for col in numeric_cols:
         series = df[col].dropna()  # Remove NaN for outlier detection
         
-        if len(series) < 3:  # Need at least 3 values for meaningful outlier detection
+        if len(series) < MIN_OUTLIER_DETECTION_SAMPLES:
             continue
             
         # Calculate distribution metrics
@@ -86,10 +118,10 @@ def detect_data_quality_issues(dataset_name: str) -> Dict[str, Any]:
         if outlier_count > 0:
             outlier_pct = (outlier_count / len(series)) * 100
             
-            # Severity: <1% = low, 1-5% = medium, >5% = high
-            if outlier_pct < 1:
+            # Severity thresholds from config
+            if outlier_pct < OUTLIER_THRESHOLDS["low"]:
                 severity = "low"
-            elif outlier_pct < 5:
+            elif outlier_pct < OUTLIER_THRESHOLDS["medium"]:
                 severity = "medium"
             else:
                 severity = "high"
@@ -123,21 +155,21 @@ def detect_data_quality_issues(dataset_name: str) -> Dict[str, Any]:
         
         if is_numeric:
             # For numeric columns, use ratio-based approach
-            if unique_ratio > 0.95:
+            if unique_ratio > HIGH_CARDINALITY_RATIO["high"]:
                 severity = "high"
-            elif unique_ratio > 0.8:
+            elif unique_ratio > HIGH_CARDINALITY_RATIO["medium"]:
                 severity = "medium"
-            elif unique_ratio > 0.5:
+            elif unique_ratio > HIGH_CARDINALITY_RATIO["low"]:
                 severity = "low"
             else:
                 severity = None  # Not high cardinality
         else:
             # For categorical columns, use absolute count
-            if unique_count > 200:
+            if unique_count > HIGH_CARDINALITY_ABSOLUTE["high"]:
                 severity = "high"
-            elif unique_count > 100:
+            elif unique_count > HIGH_CARDINALITY_ABSOLUTE["medium"]:
                 severity = "medium"
-            elif unique_count > 50:
+            elif unique_count > HIGH_CARDINALITY_ABSOLUTE["low"]:
                 severity = "low"
             else:
                 severity = None  # Not high cardinality
@@ -163,10 +195,10 @@ def detect_data_quality_issues(dataset_name: str) -> Dict[str, Any]:
         # Count unique duplicated rows (rows that appear more than once)
         unique_duplicated_rows = df[df.duplicated(keep=False)].drop_duplicates().shape[0]
         
-        # Severity: <10 = low, 10-100 = medium, >100 = high
-        if duplicate_count < 10:
+        # Severity thresholds from config
+        if duplicate_count < DUPLICATE_ROWS_THRESHOLDS["low"]:
             severity = "low"
-        elif duplicate_count < 100:
+        elif duplicate_count < DUPLICATE_ROWS_THRESHOLDS["medium"]:
             severity = "medium"
         else:
             severity = "high"
@@ -206,22 +238,22 @@ def _detect_outliers_adaptive(series: pd.Series, skewness: float, kurtosis: floa
     abs_kurt = abs(kurtosis)
     
     # Decision tree for method selection
-    if n_samples < 30:
+    if n_samples < MIN_SAMPLE_SIZE_STATS:
         # Small sample: use robust IQR method
         method = "IQR"
         outlier_mask, parameters = _detect_outliers_iqr(series)
         parameters["method_reason"] = "small_sample_size"
         
-    elif abs_skew >= 1.0 or abs_kurt >= 3.0:
+    elif abs_skew >= SKEWNESS_THRESHOLD or abs_kurt >= KURTOSIS_THRESHOLD:
         # Highly non-normal: use IQR
         method = "IQR"
         outlier_mask, parameters = _detect_outliers_iqr(series)
-        if abs_skew >= 1.0:
+        if abs_skew >= SKEWNESS_THRESHOLD:
             parameters["method_reason"] = "highly_skewed"
         else:
             parameters["method_reason"] = "heavy_tails"
             
-    elif abs_skew < 0.5 and abs_kurt < 1.0:
+    elif abs_skew < NEAR_NORMAL_SKEWNESS and abs_kurt < NEAR_NORMAL_KURTOSIS:
         # Approximately normal: use Z-score
         method = "Z-score"
         outlier_mask, parameters = _detect_outliers_zscore(series)
@@ -248,7 +280,7 @@ def _detect_outliers_adaptive(series: pd.Series, skewness: float, kurtosis: floa
     return method, outlier_mask, parameters
 
 
-def _detect_outliers_iqr(series: pd.Series, multiplier: float = 1.5):
+def _detect_outliers_iqr(series: pd.Series, multiplier: float = DEFAULT_IQR_MULTIPLIER):
     """
     Detect outliers using Interquartile Range (IQR) method.
     
@@ -280,7 +312,7 @@ def _detect_outliers_iqr(series: pd.Series, multiplier: float = 1.5):
     return outlier_mask, parameters
 
 
-def _detect_outliers_zscore(series: pd.Series, threshold: float = 3.0):
+def _detect_outliers_zscore(series: pd.Series, threshold: float = DEFAULT_ZSCORE_THRESHOLD):
     """
     Detect outliers using Z-score method.
     

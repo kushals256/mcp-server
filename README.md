@@ -1,6 +1,15 @@
 # Dataset Analysis MCP Server
 
-This is a Model Context Protocol (MCP) server designed for dataset analysis. It implements a stateful workflow, allowing users to load datasets, perform operations, and save results or pipeline configurations.
+A powerful Model Context Protocol (MCP) server for comprehensive dataset analysis. This server implements a stateful workflow for loading, analyzing, transforming, and saving datasets.
+
+## Features
+
+✨ **Dataset Discovery**: List and load CSV/JSON datasets with automatic metadata extraction  
+📊 **Exploratory Data Analysis**: Comprehensive statistical summaries and correlation analysis  
+🔍 **Data Quality Detection**: Automated detection of missing values, outliers, duplicates, and high cardinality  
+🧹 **Data Cleaning**: Remove outliers using statistical methods (Z-score, IQR)  
+💾 **Persistence**: Save processed datasets and export reproducible pipeline configurations  
+🔄 **Stateful Architecture**: Maintains dataset context across multiple tool calls
 
 ## Getting Started
 
@@ -11,98 +20,154 @@ This is a Model Context Protocol (MCP) server designed for dataset analysis. It 
 
 ### Installation
 
-1.  **Clone the repository**:
-    ```bash
-    git clone <repository_url>
-    cd mcp-server
-    ```
+1. **Clone the repository**:
+   ```bash
+   git clone <repository_url>
+   cd mcp-server
+   ```
 
-2.  **Set up the environment**:
-    It is recommended to use `uv` for dependency management, but standard `pip` works as well.
+2. **Set up the environment**:
+   
+   Using `uv` (recommended):
+   ```bash
+   uv sync
+   ```
+   
+   Using `pip`:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements.txt
+   ```
 
-    ```bash
-    # Using uv (creates .venv automatically)
-    uv sync
+3. **Run the Server**:
+   ```bash
+   # Ensure virtual environment is activated
+   source .venv/bin/activate
+   
+   # Run the server
+   python main.py
+   ```
 
-    # Using pip
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install -r requirements.txt  # If requirements.txt exists
-    # OR install from pyproject.toml
-    pip install .
-    ```
+## Project Structure
 
-3.  **Run the Server**:
-    The server uses `fastmcp`.
+```
+mcp-server/
+├── config.py              # Centralized configuration and constants
+├── main.py                # Server entry point
+├── tools/                 # MCP tool implementations
+│   ├── __init__.py        # Package exports
+│   ├── discovery.py       # Phase 1: Dataset listing and loading
+│   ├── persistence.py     # Phase 2: Saving data and configs
+│   ├── eda.py             # Phase 3: Statistical analysis
+│   ├── data_quality.py    # Phase 3: Quality issue detection
+│   └── remove_outliers.py # Phase 4: Data cleaning
+├── utils/                 # Utility modules
+│   ├── __init__.py        # Package exports
+│   └── state_manager.py   # Global state management (singleton)
+├── tests/                 # Unit tests
+│   ├── test_correlation.py
+│   ├── test_data_quality.py
+│   ├── test_eda.py
+│   └── test_remove_outliers.py
+├── data/                  # Input/output datasets (gitignored)
+├── pyproject.toml         # Project metadata and dependencies
+└── requirements.txt       # Pip-compatible requirements file
+```
 
-    ```bash
-    # Ensure virtual environment is activated
-    source .venv/bin/activate
-    
-    # Run the server
-    python main.py
-    ```
+## Workflow
 
-## Testing and Verification
+The server implements a four-phase workflow:
 
-To verify the server is working correctly, you can use the MCP Inspector (coming soon/standard MCP tooling) or create simple client scripts.
-
-### Automated Verification
-The project previously contained verification scripts (`verify_phase1.py`, etc.) which have been removed to keep the codebase clean. 
-
-To test locally:
-1. Ensure `data/` directory exists or let the tools create it.
-2. Use an MCP client (like Claude Desktop or the MCP Inspector) to connect to the server.
-3. Execute the `list_datasets` tool to check connectivity.
+1. **Discovery**: Use `list_datasets` and `load_dataset_metadata` to find and load data into global state
+2. **Analysis**: Perform EDA with `describe_dataset`, `correlation_analysis`, and `detect_data_quality_issues`
+3. **Transformation**: Clean data using `remove_outliers`
+4. **Persistence**: Save results with `save_processed_dataset` or export the pipeline with `export_pipeline_config`
 
 ## Development Guide
 
-### Project Structure
-
-- `main.py`: Entry point for the MCP server.
-- `tools/`: Contains the MCP tool definitions.
-    - `discovery.py`: Tools for listing and loading datasets.
-    - `persistence.py`: Tools for saving results and exporting pipelines.
-- `utils/`: Utility modules.
-    - `state_manager.py`: Singleton class managing the in-memory state of the current dataset.
-- `data/`: Directory for storing input/output datasets (gitignored).
-
 ### Stateful Architecture
 
-This server uses a **Global State Manager** (`utils.state_manager.GlobalStateManager`) to maintain context across tool calls. This avoids passing large datasets between the client and server.
+This server uses a **GlobalStateManager** (`utils.state_manager.GlobalStateManager`) singleton to maintain context across tool calls, avoiding the need to pass large datasets between client and server.
 
-#### How to Add a New Tool
+### Adding a New Tool
 
-1.  **Import the State Manager**:
-    ```python
-    from utils.state_manager import GlobalStateManager
-    ```
+1. **Import the State Manager**:
+   ```python
+   from utils.state_manager import GlobalStateManager
+   from config import DATA_DIR  # Use centralized config
+   ```
 
-2.  **Access State**:
-    Inside your tool function, instantiate the manager (it's a singleton) and retrieve the data.
-    ```python
-    def my_analysis_tool():
-        manager = GlobalStateManager()
-        df = manager.get_data()
-        
-        if df is None:
-            return "Error: No dataset loaded."
-            
-        # Perform analysis on df
-        result = df.describe()
-        
-        # Log the action (optional but recommended for pipeline export)
-        manager.log_action("my_analysis_tool", {"param": "value"})
-        
-        return result.to_markdown()
-    ```
+2. **Access State**:
+   ```python
+   def my_analysis_tool():
+       manager = GlobalStateManager()
+       df = manager.get_data()
+       
+       if df is None:
+           return {"error": "No dataset loaded"}
+           
+       # Perform analysis on df
+       result = df.describe()
+       
+       # Log the action (optional but recommended)
+       manager.log_action("my_analysis_tool", {"param": "value"})
+       
+       return result.to_dict()
+   ```
 
-3.  **Register the Tool**:
-    Add your new tool to `main.py` using the `mcp.tool()` decorator.
+3. **Register the Tool**:
+   Add your tool to `main.py`:
+   ```python
+   from tools.my_module import my_analysis_tool
+   mcp.tool()(my_analysis_tool)
+   ```
 
-### workflow
+### Configuration
 
-1.  **Discovery**: usage of `list_datasets` and `load_dataset_metadata` to find and load data into the global state.
-2.  **Analysis**: (Future tools) Perform operations on the loaded `DataFrame`.
-3.  **Persistence**: Use `save_processed_dataset` to save the modified state or `export_pipeline_config` to save the sequence of operations.
-=======
+All configuration constants are centralized in `config.py`:
+- Data directory paths
+- Statistical thresholds
+- Severity levels
+- Default parameters
+
+This eliminates code duplication and provides a single source of truth for all settings.
+
+## Testing
+
+Run the test suite:
+
+```bash
+# Activate virtual environment
+source .venv/bin/activate
+
+# Run all tests
+python -m pytest tests/ -v
+
+# Run specific test file
+python -m pytest tests/test_eda.py -v
+```
+
+## Troubleshooting
+
+### Server won't start
+- Ensure virtual environment is activated: `source .venv/bin/activate`
+- Verify all dependencies are installed: `pip list`
+- Check Python version: `python --version` (must be 3.10+)
+
+### Dataset not found
+- Place CSV/JSON files in the `data/` directory
+- Use `list_datasets` tool to verify files are detected
+- Check file permissions
+
+### Import errors
+- Ensure `__init__.py` files exist in `tools/` and `utils/` directories
+- Verify you're running from the project root directory
+
+## License
+
+[Add your license here]
+
+## Contributing
+
+[Add contribution guidelines here]
