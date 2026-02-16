@@ -120,6 +120,8 @@ def train_test_split(
             metadata["warning"] = "Dataset has fewer than 10 rows. Split may be unstable."
         
         manager.set_split_data(train_df, test_df, metadata)
+
+        manager.log_action("train_test_split", metadata)
         
         return metadata
 

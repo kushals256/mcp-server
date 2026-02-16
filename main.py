@@ -24,6 +24,7 @@ from tools.cast_column_type import cast_column_type
 from tools.encode_categorical import encode_categorical_feature
 from tools.train_test_split import train_test_split
 from tools.cleaning import drop_duplicate_rows
+from tools.persistence import generate_preprocessing_report
 
 # ============================================================================
 # Initialize MCP Server
@@ -63,9 +64,11 @@ mcp.tool()(encode_categorical_feature)
 mcp.tool()(train_test_split)
 
 
+
 # Register Phase 5 Tools (Feature Engineering)
 from tools.feature_engineering import create_feature
 mcp.tool()(create_feature)
+mcp.tool()(generate_preprocessing_report)
 
 # Register Phase 6 Tools (Validation & Safety)
 from tools.validation import validate_action

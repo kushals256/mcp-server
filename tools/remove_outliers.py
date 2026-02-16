@@ -148,7 +148,20 @@ def remove_outliers(
     rows_removed = initial_rows - len(dataset_cleaned)
     
     # Update global state
-    manager.load_data(dataset_cleaned, dataset_name)
+    # NEW: Use update_data to avoid duplicate logging
+    if hasattr(manager, 'update_data'):
+        manager.update_data(dataset_cleaned)
+    else:
+        manager.load_data(dataset_cleaned, dataset_name)
+    
+    # NEW: Log action for report generation
+    manager.log_action("remove_data_outliers", {
+        "dataset_name": dataset_name,
+        "column": column,
+        "method": method,
+        "threshold": threshold,
+        "rows_removed": rows_removed
+    })
     
     return {
         "column": column,

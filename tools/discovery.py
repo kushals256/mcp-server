@@ -45,6 +45,10 @@ def list_datasets() -> List[DatasetInfo]:
     Note:
         Supported formats: .csv, .json
     """
+    # OPTIONAL: Log this action if you want "Listed Datasets" to appear in your report
+    # manager = GlobalStateManager()
+    # manager.log_action("list_datasets", {})
+
     if not os.path.exists(DATA_DIR):
         return []
     
@@ -102,6 +106,8 @@ def load_dataset_metadata(filename: str) -> DatasetMetadata:
              raise ValueError("Unsupported file format")
             
         # Store in GlobalStateManager
+        # Note: We use load_data() here because this is a FRESH load from disk.
+        # This correctly logs "load_data" to the history.
         manager = GlobalStateManager()
         manager.load_data(df, filename)
 

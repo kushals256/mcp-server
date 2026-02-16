@@ -206,7 +206,19 @@ def encode_categorical_feature(
     dimensionality_change = feature_space_delta
 
     # ---- Update global state ----
-    manager.load_data(df_encoded, dataset_name)
+    # NEW: Use update_data to avoid 'load_data' spam in logs
+    if hasattr(manager, 'update_data'):
+        manager.update_data(df_encoded)
+    else:
+        manager.load_data(df_encoded, dataset_name)
+
+    # NEW: Log action for report generation
+    manager.log_action("encode_categorical", {
+        "column": column,
+        "method": method,
+        "new_columns_count": len(new_columns),
+        "dimensionality_change": dimensionality_change
+    })
 
     return {
         "column": column,
