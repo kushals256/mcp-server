@@ -232,6 +232,63 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
             estimated_memory_mb=estimated_memory_mb
         )
     
+    elif tool in [
+        "normalize_categorical_text",
+        "harmonize_categorical_values",
+        "cluster_similar_categories",
+    ]:
+        column = params.get("column")
+        if not column:
+            return ValidateActionResponse(
+                allowed=False,
+                reason="No column specified for normalization",
+                estimated_memory_mb=current_memory_mb
+            )
+        if column not in df.columns:
+            return ValidateActionResponse(
+                allowed=False,
+                reason=f"Column '{column}' not found in dataset",
+                estimated_memory_mb=current_memory_mb
+            )
+        if pd.api.types.is_numeric_dtype(df[column]):
+            return ValidateActionResponse(
+                allowed=False,
+                reason=f"Column '{column}' is numeric, normalization requires string/categorical columns",
+                estimated_memory_mb=current_memory_mb
+            )
+        return ValidateActionResponse(
+            allowed=True,
+            reason=f"{tool} on '{column}' is safe (in-place string transform)",
+            estimated_memory_mb=current_memory_mb
+        )
+    
+    elif tool == "ml_prepare_categorical":
+        column = params.get("column")
+        method = params.get("method", "deduplicate")
+        if not column:
+            return ValidateActionResponse(
+                allowed=False,
+                reason="No column specified for ML preparation",
+                estimated_memory_mb=current_memory_mb
+            )
+        if column not in df.columns:
+            return ValidateActionResponse(
+                allowed=False,
+                reason=f"Column '{column}' not found in dataset",
+                estimated_memory_mb=current_memory_mb
+            )
+        if method == "gap_encoder":
+            n_components = params.get("n_components", 10)
+            avg_col_size = current_memory_mb / len(df.columns) if len(df.columns) > 0 else 1.0
+            estimated_memory_mb = current_memory_mb + avg_col_size * n_components
+        else:
+            estimated_memory_mb = current_memory_mb
+        return ValidateActionResponse(
+            allowed=True,
+            reason=f"ml_prepare_categorical ({method}) on '{column}' is safe",
+            estimated_memory_mb=estimated_memory_mb
+        )
+    
     else:
         # Unknown tool - be conservative
         return ValidateActionResponse(
@@ -239,3 +296,4 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
             reason=f"Unknown tool '{tool}'. Cannot validate safety.",
             estimated_memory_mb=current_memory_mb
         )
+
