@@ -23,6 +23,7 @@ from utils.state_manager import GlobalStateManager
 class SaveDatasetRequest(BaseModel):
     format: str = Field(..., description="Format to save: 'csv', 'json', or 'parquet'")
     path: str = Field(..., description="Target filename or path")
+    split_type: str = Field("train", description="Which split to save: 'train' (default) or 'test'")
 
 class SavePipelineRequest(BaseModel):
     pipeline_name: str = Field(..., description="Name of the pipeline (will be saved as .json or .yaml)")
@@ -55,10 +56,16 @@ def save_processed_dataset(request: SaveDatasetRequest) -> OperationResult:
         The parquet format requires pyarrow or fastparquet to be installed.
     """
     manager = GlobalStateManager()
-    df = manager.get_data()
+    
+    if request.split_type == "test":
+        df = manager.get_test_data()
+        dataset_label = "Test dataset"
+    else:
+        df = manager.get_data()
+        dataset_label = "Training dataset"
     
     if df is None:
-        return OperationResult(success=False, message="No dataset loaded in memory. Please load a dataset first.", path="")
+        return OperationResult(success=False, message=f"No {request.split_type} dataset loaded in memory.", path="")
 
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
