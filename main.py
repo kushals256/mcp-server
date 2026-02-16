@@ -20,6 +20,7 @@ from tools.eda import describe_dataset, correlation_analysis
 from tools.data_quality import detect_data_quality_issues
 from tools.data_quality import detect_data_quality_issues
 from tools.remove_outliers import remove_outliers
+from tools.cast_column_type import cast_column_type
 from tools.train_test_split import train_test_split
 
 # ============================================================================
@@ -54,6 +55,7 @@ mcp.tool()(correlation_analysis)
 # Phase 4: Transformation
 # Clean data and remove outliers
 mcp.tool()(remove_outliers)
+mcp.tool()(cast_column_type)
 mcp.tool()(train_test_split)
 
 
