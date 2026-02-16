@@ -18,7 +18,6 @@ from tools.discovery import list_datasets, load_dataset_metadata
 from tools.save_dataset import save_processed_dataset, export_pipeline_config
 from tools.eda import describe_dataset, correlation_analysis
 from tools.data_quality import detect_data_quality_issues
-from tools.data_quality import detect_data_quality_issues
 from tools.remove_outliers import remove_outliers
 from tools.cast_column_type import cast_column_type
 from tools.encode_categorical import encode_categorical_feature
@@ -60,6 +59,17 @@ mcp.tool()(cast_column_type)
 mcp.tool()(encode_categorical_feature)
 mcp.tool()(train_test_split)
 
+# Phase 4.5: Categorical Normalization
+# Surface cleanup, synonym mapping, fuzzy clustering, ML prep
+from tools.normalize_categorical import normalize_categorical_text
+from tools.harmonize_categorical import harmonize_categorical_values
+from tools.cluster_categorical import cluster_similar_categories
+from tools.ml_prepare_categorical import ml_prepare_categorical
+
+mcp.tool()(normalize_categorical_text)
+mcp.tool()(harmonize_categorical_values)
+mcp.tool()(cluster_similar_categories)
+mcp.tool()(ml_prepare_categorical)
 
 # Register Phase 5 Tools (Feature Engineering)
 from tools.feature_engineering import create_feature

@@ -139,3 +139,20 @@ MEMORY_RISK_THRESHOLDS = {
     "medium": 50,
     # > 50 is high
 }
+
+# ============================================================================
+# Categorical Normalization Parameters
+# ============================================================================
+
+# Fuzzy clustering: minimum rapidfuzz similarity score (0–100) to merge strings
+FUZZY_SCORE_THRESHOLD = 85
+
+# Fuzzy clustering: minimum cluster size to apply replacement
+FUZZY_MIN_GROUP_SIZE = 1
+
+# Fuzzy clustering: max unique values before refusing pairwise comparison
+# Prevents O(n²) explosion on high-cardinality columns
+FUZZY_MAX_COMPARISONS = 500
+
+# Flashtext: whether keyword matching is case-sensitive
+HARMONIZE_CASE_SENSITIVE = False
