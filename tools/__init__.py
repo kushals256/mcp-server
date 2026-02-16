@@ -14,6 +14,7 @@ from .eda import describe_dataset, correlation_analysis
 from .data_quality import detect_data_quality_issues
 from .remove_outliers import remove_outliers
 from .cast_column_type import cast_column_type
+from .encode_categorical import encode_categorical_feature
 
 __all__ = [
     # Phase 1: Discovery
@@ -29,4 +30,5 @@ __all__ = [
     # Phase 4: Transformation
     "remove_outliers",
     "cast_column_type",
+    "encode_categorical_feature",
 ]

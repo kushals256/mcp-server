@@ -118,3 +118,24 @@ DEFAULT_CORRELATION_METHOD = "pearson"
 
 # Supported correlation methods
 SUPPORTED_CORRELATION_METHODS = ["pearson", "spearman", "kendall"]
+
+# ============================================================================
+# Categorical Encoding Parameters
+# ============================================================================
+
+# One-hot encoding cardinality thresholds
+ONE_HOT_MAX_CARDINALITY = 20          # Warn above this
+ONE_HOT_BLOCK_CARDINALITY = 100       # Block above this (too many columns)
+
+# Hashing default number of components
+DEFAULT_HASH_N_COMPONENTS = 8
+
+# Target encoding default smoothing factor
+DEFAULT_TARGET_SMOOTHING = 1.0
+
+# Memory risk thresholds (based on new columns created)
+MEMORY_RISK_THRESHOLDS = {
+    "low": 10,
+    "medium": 50,
+    # > 50 is high
+}
