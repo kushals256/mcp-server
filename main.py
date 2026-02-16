@@ -19,6 +19,7 @@ from tools.persistence import save_processed_dataset, export_pipeline_config
 from tools.eda import describe_dataset, correlation_analysis
 from tools.data_quality import detect_data_quality_issues
 from tools.remove_outliers import remove_outliers
+from tools.cast_column_type import cast_column_type
 
 # ============================================================================
 # Initialize MCP Server
@@ -50,6 +51,7 @@ mcp.tool()(correlation_analysis)
 # Phase 4: Transformation
 # Clean data and remove outliers
 mcp.tool()(remove_outliers)
+mcp.tool()(cast_column_type)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ from .persistence import save_processed_dataset, export_pipeline_config
 from .eda import describe_dataset, correlation_analysis
 from .data_quality import detect_data_quality_issues
 from .remove_outliers import remove_outliers
+from .cast_column_type import cast_column_type
 
 __all__ = [
     # Phase 1: Discovery
@@ -27,4 +28,5 @@ __all__ = [
     "detect_data_quality_issues",
     # Phase 4: Transformation
     "remove_outliers",
+    "cast_column_type",
 ]
