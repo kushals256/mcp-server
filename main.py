@@ -15,12 +15,14 @@ from mcp.server.fastmcp import FastMCP
 
 from config import SERVER_NAME
 from tools.discovery import list_datasets, load_dataset_metadata
-from tools.persistence import save_processed_dataset, export_pipeline_config
+from tools.save_dataset import save_processed_dataset, export_pipeline_config
 from tools.eda import describe_dataset, correlation_analysis
+from tools.data_quality import detect_data_quality_issues
 from tools.data_quality import detect_data_quality_issues
 from tools.remove_outliers import remove_outliers
 from tools.cast_column_type import cast_column_type
 from tools.encode_categorical import encode_categorical_feature
+from tools.train_test_split import train_test_split
 
 # ============================================================================
 # Initialize MCP Server
@@ -51,9 +53,12 @@ mcp.tool()(correlation_analysis)
 
 # Phase 4: Transformation
 # Clean data and remove outliers
+# Phase 4: Transformation
+# Clean data and remove outliers
 mcp.tool()(remove_outliers)
 mcp.tool()(cast_column_type)
 mcp.tool()(encode_categorical_feature)
+mcp.tool()(train_test_split)
 
 
 if __name__ == "__main__":
