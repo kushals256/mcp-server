@@ -13,7 +13,7 @@ import numpy as np
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.cluster_categorical import cluster_similar_categories
+from tools.cluster_categorical import cluster_similar_categories, ClusterCategoricalRequest
 from utils.state_manager import GlobalStateManager
 
 
@@ -54,9 +54,11 @@ def test_basic_typo_clustering():
     """Test that typos are merged into the most-frequent canonical form."""
     df, manager = load_test_data("test_clust_basic.csv")
 
-    result = cluster_similar_categories(
-        "test_clust_basic.csv", "state", threshold=80
-    )
+    result = cluster_similar_categories(ClusterCategoricalRequest(
+        dataset_name="test_clust_basic.csv", 
+        column="state", 
+        threshold=80
+    ))
 
     assert result.get("error") is None, f"Unexpected error: {result.get('error')}"
     assert result["clusters_found"] > 0
@@ -72,9 +74,11 @@ def test_nan_preservation():
     """Test that NaN values survive clustering."""
     df, manager = load_test_data("test_clust_nan.csv")
 
-    result = cluster_similar_categories(
-        "test_clust_nan.csv", "state", threshold=80
-    )
+    result = cluster_similar_categories(ClusterCategoricalRequest(
+        dataset_name="test_clust_nan.csv", 
+        column="state", 
+        threshold=80
+    ))
     assert result.get("error") is None
     new_df = manager.get_data()
     assert pd.isna(new_df["state"].iloc[6])
@@ -89,9 +93,11 @@ def test_high_threshold_fewer_matches():
     """Test that a very high threshold reduces clustering."""
     df, manager = load_test_data("test_clust_high.csv")
 
-    result = cluster_similar_categories(
-        "test_clust_high.csv", "state", threshold=99
-    )
+    result = cluster_similar_categories(ClusterCategoricalRequest(
+        dataset_name="test_clust_high.csv", 
+        column="state", 
+        threshold=99
+    ))
     assert result.get("error") is None
     # With threshold=99, fewer (or no) clusters should form
     assert result["clusters_found"] <= 1
@@ -101,9 +107,11 @@ def test_low_threshold_more_matches():
     """Test that a low threshold increases clustering."""
     df, manager = load_test_data("test_clust_low.csv")
 
-    result = cluster_similar_categories(
-        "test_clust_low.csv", "state", threshold=60
-    )
+    result = cluster_similar_categories(ClusterCategoricalRequest(
+        dataset_name="test_clust_low.csv", 
+        column="state", 
+        threshold=60
+    ))
     assert result.get("error") is None
     # More clusters should form at low threshold
     assert result["unique_after"] <= result["unique_before"]
@@ -118,12 +126,12 @@ def test_canonical_override():
     """Test that canonical_override takes precedence over automatic clustering."""
     df, manager = load_test_data("test_clust_over.csv")
 
-    result = cluster_similar_categories(
-        "test_clust_over.csv",
-        "state",
+    result = cluster_similar_categories(ClusterCategoricalRequest(
+        dataset_name="test_clust_over.csv",
+        column="state",
         threshold=80,
-        canonical_override={"califronia": "CA"},
-    )
+        canonical_override={"califronia": "CA"}
+    ))
     assert result.get("error") is None
 
     new_df = manager.get_data()
@@ -145,9 +153,11 @@ def test_deterministic_tiebreak():
     manager = GlobalStateManager()
     manager.load_data(df, "test_clust_tie.csv")
 
-    result = cluster_similar_categories(
-        "test_clust_tie.csv", "city", threshold=50
-    )
+    result = cluster_similar_categories(ClusterCategoricalRequest(
+        dataset_name="test_clust_tie.csv", 
+        column="city", 
+        threshold=50
+    ))
     assert result.get("error") is None
 
     # Run it again — result must be identical (deterministic)
@@ -155,9 +165,11 @@ def test_deterministic_tiebreak():
         pd.DataFrame({"city": ["bravo", "alpha", "charlie"]}),
         "test_clust_tie2.csv",
     )
-    result2 = cluster_similar_categories(
-        "test_clust_tie2.csv", "city", threshold=50
-    )
+    result2 = cluster_similar_categories(ClusterCategoricalRequest(
+        dataset_name="test_clust_tie2.csv", 
+        column="city", 
+        threshold=50
+    ))
     assert result["cluster_details"] == result2["cluster_details"]
 
 
@@ -172,7 +184,10 @@ def test_max_comparisons_guard():
     manager = GlobalStateManager()
     manager.load_data(df, "test_clust_max.csv")
 
-    result = cluster_similar_categories("test_clust_max.csv", "cat")
+    result = cluster_similar_categories(ClusterCategoricalRequest(
+        dataset_name="test_clust_max.csv", 
+        column="cat"
+    ))
     assert "error" in result
     assert "FUZZY_MAX_COMPARISONS" in result["error"]
 
@@ -184,25 +199,49 @@ def test_max_comparisons_guard():
 
 def test_missing_column():
     load_test_data("test_clust_err1.csv")
-    result = cluster_similar_categories("test_clust_err1.csv", "nonexistent")
+    result = cluster_similar_categories(ClusterCategoricalRequest(
+        dataset_name="test_clust_err1.csv", 
+        column="nonexistent"
+    ))
     assert "error" in result
     assert "not found" in result["error"]
 
 
 def test_numeric_column():
     load_test_data("test_clust_err2.csv")
-    result = cluster_similar_categories("test_clust_err2.csv", "score")
+    result = cluster_similar_categories(ClusterCategoricalRequest(
+        dataset_name="test_clust_err2.csv", 
+        column="score"
+    ))
     assert "error" in result
     assert "numeric" in result["error"]
 
 
 def test_invalid_method():
     load_test_data("test_clust_err3.csv")
-    result = cluster_similar_categories(
-        "test_clust_err3.csv", "state", method="invalid"
-    )
+    # Pydantic validation might raise ValidationError before tool logic.
+    # But since we're using the tool function directly, we pass the model.
+    # But constructing the model with invalid method will raise ValidationError.
+    # So we should expect a ValidationError or similar.
+    # However, the tool originally checked for "method not in _SCORERS".
+    # With Pydantic Literal, it will raise ValidationError on model creation.
+    
+    try:
+        request = ClusterCategoricalRequest(
+            dataset_name="test_clust_err3.csv", 
+            column="state", 
+            method="invalid"
+        )
+        result = cluster_similar_categories(request)
+    except Exception as e:
+        # If Pydantic raises, this test passes as "invalid method" caught.
+        # But for compatibility with existing tests expecting dict return:
+        # We might want to catch it and assert it.
+        assert "Input should be 'ratio', 'partial_ratio' or 'token_sort_ratio'" in str(e)
+        return
+
+    # If it didn't raise (unlikely with Pydantic), assert error in result
     assert "error" in result
-    assert "Unknown method" in result["error"]
 
 
 # ============================================================================
@@ -214,17 +253,21 @@ def test_idempotency():
     """Test that running clustering twice produces the same result."""
     load_test_data("test_clust_idem.csv")
 
-    result1 = cluster_similar_categories(
-        "test_clust_idem.csv", "state", threshold=80
-    )
+    result1 = cluster_similar_categories(ClusterCategoricalRequest(
+        dataset_name="test_clust_idem.csv", 
+        column="state", 
+        threshold=80
+    ))
     assert result1.get("error") is None
 
     manager = GlobalStateManager()
     df_after_first = manager.get_data().copy()
 
-    result2 = cluster_similar_categories(
-        "test_clust_idem.csv", "state", threshold=80
-    )
+    result2 = cluster_similar_categories(ClusterCategoricalRequest(
+        dataset_name="test_clust_idem.csv", 
+        column="state", 
+        threshold=80
+    ))
     assert result2.get("error") is None
 
     df_after_second = manager.get_data()
@@ -242,9 +285,11 @@ def test_all_unique_no_clusters():
     manager = GlobalStateManager()
     manager.load_data(df, "test_clust_uniq.csv")
 
-    result = cluster_similar_categories(
-        "test_clust_uniq.csv", "cat", threshold=90
-    )
+    result = cluster_similar_categories(ClusterCategoricalRequest(
+        dataset_name="test_clust_uniq.csv", 
+        column="cat", 
+        threshold=90
+    ))
     assert result.get("error") is None
     assert result["clusters_found"] == 0
     assert result["unique_before"] == result["unique_after"]

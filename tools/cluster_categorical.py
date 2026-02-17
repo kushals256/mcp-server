@@ -13,6 +13,7 @@ Internal Libraries:
 """
 
 from typing import Dict, Any, List, Optional, Literal
+from pydantic import BaseModel, Field
 
 import pandas as pd
 from rapidfuzz import fuzz, process
@@ -42,13 +43,15 @@ _SCORERS = {
 # ============================================================================
 
 
-def cluster_similar_categories(
-    dataset_name: str,
-    column: str,
-    threshold: int = FUZZY_SCORE_THRESHOLD,
-    method: Literal["ratio", "partial_ratio", "token_sort_ratio"] = "ratio",
-    canonical_override: Optional[Dict[str, str]] = None,
-) -> Dict[str, Any]:
+class ClusterCategoricalRequest(BaseModel):
+    dataset_name: str = Field(..., description="Name of the dataset file (e.g., 'data.csv').")
+    column: str = Field(..., description="The categorical column to cluster.")
+    threshold: int = Field(FUZZY_SCORE_THRESHOLD, description="Minimum similarity score (0-100) to merge values.")
+    method: Literal["ratio", "partial_ratio", "token_sort_ratio"] = Field("ratio", description="Similarity metric.")
+    canonical_override: Optional[Dict[str, str]] = Field(None, description="Optional dict mapping values to canonical form.")
+
+
+def cluster_similar_categories(request: ClusterCategoricalRequest) -> Dict[str, Any]:
     """
     Cluster similar category strings and replace them with a canonical form.
 
@@ -59,18 +62,17 @@ def cluster_similar_categories(
     harmonize_categorical_values and before encode_categorical_feature.
 
     Args:
-        dataset_name: Name of the dataset file (e.g., 'data.csv').
-        column: The categorical column to cluster.
-        threshold: Minimum similarity score (0-100) to merge values (default 85).
-        method: Similarity metric — 'ratio', 'partial_ratio', or
-            'token_sort_ratio' (default 'ratio').
-        canonical_override: Optional dict mapping specific values to a
-            canonical form, applied *after* automatic clustering.
-            Example: {"Califronia": "california"}
+        request: ClusterCategoricalRequest containing parameters.
 
     Returns:
         Dictionary with clustering results, cluster details, and metrics.
     """
+    dataset_name = request.dataset_name
+    column = request.column
+    threshold = request.threshold
+    method = request.method
+    canonical_override = request.canonical_override
+
     # ---- Load & validate ----
     manager = GlobalStateManager()
 
