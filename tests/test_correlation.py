@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from tools.eda import correlation_analysis
+from tools.eda import correlation_analysis, CorrelationAnalysisRequest
 
 def create_correlated_data():
     # Create dataset with known relationships
@@ -36,12 +36,14 @@ def create_correlated_data():
         'value': num_vals # Num-Cat target
     })
     
+    # Ensure directory exists
+    os.makedirs("data", exist_ok=True)
     df.to_csv("data/test_corr.csv", index=False)
     print("Created test_corr.csv")
 
 def test_correlation():
     print("\nRunning correlation_analysis on test_corr.csv...")
-    results = correlation_analysis("test_corr.csv")
+    results = correlation_analysis(CorrelationAnalysisRequest(dataset_name="test_corr.csv"))
     
     if "error" in results:
         print(f"FAILED: {results['error']}")
