@@ -74,8 +74,13 @@ mcp.tool()(cluster_similar_categories)
 mcp.tool()(ml_prepare_categorical)
 
 # Register Phase 5 Tools (Feature Engineering)
-from tools.feature_engineering import create_feature
-mcp.tool()(create_feature)
+from tools.remove_features import remove_features
+from tools.extract_features import extract_features
+from tools.reduce_features import reduce_features
+
+mcp.tool()(remove_features)
+mcp.tool()(extract_features)
+mcp.tool()(reduce_features)
 
 # Register Phase 6 Tools (Validation & Safety)
 from tools.validation import validate_action

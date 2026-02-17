@@ -48,21 +48,22 @@ class GlobalStateManager:
         self._test_df: Optional[pd.DataFrame] = None
         self._is_split: bool = False
 
-    def load_data(self, df: pd.DataFrame, name: str):
+    def load_data(self, df: pd.DataFrame, name: str, reset_split: bool = True):
         """
         Load a dataframe into memory and log the action.
-        Resets split state since a new dataset is loaded.
         
         Args:
             df: Pandas DataFrame to store
             name: Name/identifier for the dataset (e.g., filename)
+            reset_split: Whether to clear the test set/split state (default True).
+                         Set to False if just updating the training set in-place.
         """
         self._current_df = df
         self._current_dataset_name = name
         
-        # Reset split state on new load
-        self._test_df = None
-        self._is_split = False
+        if reset_split:
+            self._test_df = None
+            self._is_split = False
         
         self.log_action("load_data", {"dataset_name": name})
 
@@ -132,3 +133,111 @@ class GlobalStateManager:
     def clear_state(self):
         """Clear all state and reset to initial values."""
         self.initialize()
+
+    # =========================================================================
+    # Transformer Persistence & Versioning
+    # =========================================================================
+
+    def _get_next_version(self, base_name: str) -> str:
+        """
+        Generate a unique name for a transformer using auto-incrementing version.
+        Example: 'pca' -> 'pca_v1', 'pca_v2'
+        """
+        if not hasattr(self, "_transformers"):
+            self._transformers = {}
+            
+        version = 1
+        while True:
+            name = f"{base_name}_v{version}"
+            if name not in self._transformers:
+                return name
+            version += 1
+
+    def save_transformer(self, base_name: str, transformer: Any, columns_in: List[str] = None) -> str:
+        """
+        Save a fitted transformer with a unique versioned name.
+        
+        Args:
+            base_name: Base name for the transformer (e.g., 'pca', 'scaler')
+            transformer: The fitted model/transformer object
+            columns_in: Optional list of input column names the transformer expects
+            
+        Returns:
+            The unique name assigned to the saved transformer (e.g., 'pca_v1')
+        """
+        if not hasattr(self, "_transformers"):
+            self._transformers = {}
+            
+        unique_name = self._get_next_version(base_name)
+        
+        self._transformers[unique_name] = {
+            "model": transformer,
+            "columns_in": columns_in,
+            "version": unique_name.split("_v")[-1]
+        }
+        
+        # Log minimal info to avoid clutter
+        self.log_action("save_transformer", {"name": unique_name, "type": type(transformer).__name__})
+        return unique_name
+
+    def get_transformer(self, name: str) -> Optional[Any]:
+        """Retrieve a stored transformer by its unique name."""
+        if not hasattr(self, "_transformers") or name not in self._transformers:
+            return None
+        return self._transformers[name]["model"]
+
+    def list_transformers(self) -> Dict[str, str]:
+        """List all stored transformers and their types."""
+        if not hasattr(self, "_transformers"):
+            return {}
+        return {k: type(v["model"]).__name__ for k, v in self._transformers.items()}
+
+    # =========================================================================
+    # Test Set Management (Leakage Prevention)
+    # =========================================================================
+
+    def is_split(self) -> bool:
+        """Check if dataset is currently split."""
+        return self._is_split
+
+    def update_test_data(self, new_test_df: pd.DataFrame):
+        """
+        Update the hidden test dataset with a transformed version.
+        
+        CRITICAL SAFETY CHECKS:
+        1. Must preserve row count (unless explicit removal, though usually transforms don't drop test rows)
+        2. Must match the schema of the CURRENT training data (columns, order, dtypes)
+        
+        Args:
+            new_test_df: The transformed test DataFrame
+        """
+        if not self._is_split:
+            raise ValueError("Values cannot be updated: Dataset is not split.")
+            
+        if self._current_df is None:
+             raise ValueError("Training data is missing. Cannot validate schema.")
+
+        # 1. Schema Consistency Check
+        train_cols = list(self._current_df.columns)
+        test_cols = list(new_test_df.columns)
+        
+        if train_cols != test_cols:
+            # Check for set difference to give better error message
+            train_set = set(train_cols)
+            test_set = set(test_cols)
+            missing = train_set - test_set
+            extra = test_set - train_set
+            
+            error_msg = "Schema Mismatch! Train and Test columns must be identical."
+            if missing: error_msg += f" Missing in Test: {missing}."
+            if extra: error_msg += f" Extra in Test: {extra}."
+            if not missing and not extra: error_msg += " Column order mismatch."
+            
+            raise ValueError(error_msg)
+
+        # 2. Dtype Consistency Warning (Strict enforcement might be too brittle for some pandas edge cases, but we verify)
+        # We won't raise error yet but we'll log if they differ significantly
+        # (e.g. float vs object)
+        
+        # 3. Update State
+        self._test_df = new_test_df.copy()

@@ -72,6 +72,13 @@ DEFAULT_ZSCORE_THRESHOLD = 3.0
 # Default IQR multiplier for fence calculation
 DEFAULT_IQR_MULTIPLIER = 1.5
 
+# Default Modified Z-score threshold (3.5 is standard recommendation)
+DEFAULT_MODIFIED_ZSCORE_THRESHOLD = 3.5
+
+# Default Random State for reproducibility
+DEFAULT_RANDOM_STATE = 42
+
+
 # ============================================================================
 # Statistical Analysis Parameters
 # ============================================================================
