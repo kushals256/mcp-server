@@ -1,12 +1,14 @@
 import pandas as pd
-import os
 from typing import Dict, Any, List, Optional, Union
 from utils.state_manager import GlobalStateManager
-from tools.discovery import load_dataset_metadata, DATA_DIR
+from tools.discovery import load_dataset_metadata
 
 def drop_duplicate_rows(dataset_name: str, subset_columns: Optional[List[str]] = None, keep: str = 'first') -> Dict[str, int]:
     """
-    Remove duplicate rows from the dataset and SAVE the changes to the file.
+    Remove duplicate rows from the dataset.
+    
+    This operation only updates the in-memory state. To persist changes to disk,
+    use the 'save_dataset' tool explicitly.
     
     Args:
         dataset_name: Name of the dataset file (e.g. 'test.csv').
@@ -16,8 +18,6 @@ def drop_duplicate_rows(dataset_name: str, subset_columns: Optional[List[str]] =
     manager = GlobalStateManager()
     
     # 1. Ensure Data is Loaded
-    # Even if loaded, we want to ensure we are operating on the latest version if multiple tools are used.
-    # However, for consistency with the state manager pattern, we check the name.
     if manager.get_dataset_name() != dataset_name:
         try:
             load_dataset_metadata(dataset_name)
@@ -40,19 +40,12 @@ def drop_duplicate_rows(dataset_name: str, subset_columns: Optional[List[str]] =
         # Create cleaned dataframe
         df_cleaned = df.drop_duplicates(subset=subset_columns, keep=keep_arg)
         
-        # 3. SAVE to Disk (Overwrite original file)
-        # Construct the full path based on DATA_DIR imported from discovery
-        file_path = os.path.join(DATA_DIR, dataset_name)
-        
-        if dataset_name.lower().endswith(".csv"):
-            df_cleaned.to_csv(file_path, index=False)
-        elif dataset_name.lower().endswith(".json"):
-            df_cleaned.to_json(file_path, orient="records", indent=4)
+        # 3. Update State (Memory ONLY)
+        # Use update_data to avoid duplicate 'load_data' logs
+        if hasattr(manager, 'update_data'):
+            manager.update_data(df_cleaned)
         else:
-            raise ValueError("Unsupported file format for saving. Only CSV and JSON supported.")
-
-        # 4. Update State (Memory)
-        manager.load_data(df_cleaned, dataset_name)
+            manager.load_data(df_cleaned, dataset_name)
         
         rows_dropped = initial_rows - len(df_cleaned)
         remaining_rows = len(df_cleaned)
@@ -61,7 +54,7 @@ def drop_duplicate_rows(dataset_name: str, subset_columns: Optional[List[str]] =
             "subset_columns": subset_columns, 
             "keep": keep,
             "rows_removed": rows_dropped,
-            "save_to_disk": True
+            "save_to_disk": False  # Explicitly logging that we didn't save
         })
         
         return {
@@ -70,4 +63,4 @@ def drop_duplicate_rows(dataset_name: str, subset_columns: Optional[List[str]] =
         }
 
     except Exception as e:
-        raise RuntimeError(f"Error dropping duplicates or saving file: {str(e)}")
+        raise RuntimeError(f"Error dropping duplicates: {str(e)}")
