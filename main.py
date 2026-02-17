@@ -23,6 +23,12 @@ from tools.cast_column_type import cast_column_type
 from tools.encode_categorical import encode_categorical_feature
 from tools.train_test_split import train_test_split
 from tools.cleaning import drop_duplicate_rows
+from tools.normalize_categorical import normalize_categorical_text
+from tools.harmonize_categorical import harmonize_categorical_values
+from tools.cluster_categorical import cluster_similar_categories
+from tools.ml_prepare_categorical import ml_prepare_categorical
+from tools.feature_engineering import create_feature
+from tools.validation import validate_action
 
 # ============================================================================
 # Initialize MCP Server
@@ -63,27 +69,15 @@ mcp.tool()(train_test_split)
 
 # Phase 4.5: Categorical Normalization
 # Surface cleanup, synonym mapping, fuzzy clustering, ML prep
-from tools.normalize_categorical import normalize_categorical_text
-from tools.harmonize_categorical import harmonize_categorical_values
-from tools.cluster_categorical import cluster_similar_categories
-from tools.ml_prepare_categorical import ml_prepare_categorical
-
 mcp.tool()(normalize_categorical_text)
 mcp.tool()(harmonize_categorical_values)
 mcp.tool()(cluster_similar_categories)
 mcp.tool()(ml_prepare_categorical)
 
 # Register Phase 5 Tools (Feature Engineering)
-from tools.remove_features import remove_features
-from tools.extract_features import extract_features
-from tools.reduce_features import reduce_features
-
-mcp.tool()(remove_features)
-mcp.tool()(extract_features)
-mcp.tool()(reduce_features)
+mcp.tool()(create_feature)
 
 # Register Phase 6 Tools (Validation & Safety)
-from tools.validation import validate_action
 mcp.tool()(validate_action)
 
 if __name__ == "__main__":

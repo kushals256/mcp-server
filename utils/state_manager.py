@@ -52,13 +52,16 @@ class GlobalStateManager:
         """
         Load a dataframe into memory and log the action.
         
+        Stores a defensive COPY of the input DataFrame to prevent the caller
+        from accidentally mutating the internal state after loading.
+        
         Args:
-            df: Pandas DataFrame to store
+            df: Pandas DataFrame to store (a copy will be made)
             name: Name/identifier for the dataset (e.g., filename)
             reset_split: Whether to clear the test set/split state (default True).
                          Set to False if just updating the training set in-place.
         """
-        self._current_df = df
+        self._current_df = df.copy()
         self._current_dataset_name = name
         
         if reset_split:
@@ -94,10 +97,15 @@ class GlobalStateManager:
         Get the current dataframe from memory.
         If split, this returns the TRAINING set.
         
+        Returns a COPY to prevent accidental mutation of internal state,
+        consistent with get_test_data().
+        
         Returns:
-            The current DataFrame if loaded, None otherwise
+            A copy of the current DataFrame if loaded, None otherwise
         """
-        return self._current_df
+        if self._current_df is not None:
+            return self._current_df.copy()
+        return None
         
     def get_test_data(self) -> Optional[pd.DataFrame]:
         """

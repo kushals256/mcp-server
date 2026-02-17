@@ -72,6 +72,18 @@ def save_processed_dataset(request: SaveDatasetRequest) -> OperationResult:
         
     path = os.path.join(DATA_DIR, request.path)
     
+    # Guard: prevent silent overwrite of the currently loaded source file
+    source_name = manager.get_dataset_name()
+    if source_name and os.path.basename(path) == source_name:
+        return OperationResult(
+            success=False,
+            message=(
+                f"Target filename '{request.path}' matches the currently loaded source dataset "
+                f"'{source_name}'. Use a different filename to preserve the original data."
+            ),
+            path=""
+        )
+    
     try:
         if request.format == "csv":
             df.to_csv(path, index=False)
