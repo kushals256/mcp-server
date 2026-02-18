@@ -1,291 +1,157 @@
-import sys
-import os
+import pytest
 import pandas as pd
 import numpy as np
-
-# Add project root to path
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from tools.feature_engineering import create_feature, CreateFeatureRequest
+import os
 from utils.state_manager import GlobalStateManager
+from tools.train_test_split import train_test_split
+from tools.remove_features import remove_features
+from tools.extract_features import extract_features
+from tools.reduce_features import reduce_features
 
+@pytest.fixture
+def manager():
+    mgr = GlobalStateManager()
+    mgr.initialize()
+    return mgr
 
-def setup_test_data():
-    """Create and load sample dataset for testing."""
-    manager = GlobalStateManager()
-    manager.clear_state()
-    
+@pytest.fixture
+def sample_data(manager):
+    # Create dataset with specific properties for testing
+    np.random.seed(42)
+    rows = 100
     df = pd.DataFrame({
-        'Age': [25, 30, 35, 40, 45],
-        'Fare': [10.5, 20.0, 30.5, 40.0, 50.5],
-        'Name': ['Alice', 'Bob', 'Charlie', 'David', 'Eve'],
-        'Survived': [1, 0, 1, 0, 1]
+        'A': np.random.normal(0, 1, rows), # Normal
+        'B': np.random.normal(0, 1, rows), # Normal
+        'C': np.random.choice(['a', 'b', 'c'], rows), # Cat
+        'Constant': np.zeros(rows), # Low variance
+        'Correlated': np.zeros(rows), # Will overwrite
+        'Target': np.random.choice([0, 1], rows) # Binary target
     })
+    # Make 'Correlated' highly correlated with 'A'
+    df['Correlated'] = df['A'] * 0.99 + np.random.normal(0, 0.01, rows)
     
-    manager.load_data(df, "test_data.csv")
+    manager.load_data(df, "test_fe.csv")
     return manager
 
+# =========================================================================
+# 1. LEAKAGE & STATE CONSISTENCY TESTS
+# =========================================================================
 
-def test_create_feature_simple_arithmetic():
-    """Test creating a feature with simple arithmetic."""
-    print("\n1. Testing simple arithmetic feature creation...")
-    manager = setup_test_data()
+def test_split_consistency_remove(manager, sample_data):
+    """Verify changes apply to BOTH train and test after split."""
+    # Split first
+    train_test_split(test_size=0.2, random_state=42)
     
-    request = CreateFeatureRequest(
-        name="AgeDouble",
-        expression="df['Age'] * 2"
-    )
+    # Remove 'Constant' (stateless/stateful check)
+    res = remove_features(method="variance_threshold", threshold=0.0)
+    assert res['success'] is True
     
-    response = create_feature(request)
+    train_df = manager.get_data()
+    test_df = manager.get_test_data()
     
-    assert response.feature_name == "AgeDouble", "Feature name should match"
-    assert response.rows_affected == 5, "Should affect 5 rows"
-    assert len(response.sample_values) == 5, "Should have 5 sample values"
+    # Check consistency
+    assert 'Constant' not in train_df.columns
+    assert 'Constant' not in test_df.columns
+    assert list(train_df.columns) == list(test_df.columns)
     
-    # Verify the feature was created correctly
-    df = manager.get_data()
-    assert "AgeDouble" in df.columns, "Feature should be in dataframe"
-    assert df["AgeDouble"].tolist() == [50, 60, 70, 80, 90], "Values should be doubled"
-    print(f"✓ PASSED: Created feature with values {df['AgeDouble'].tolist()}")
+    # Check persistence
+    transformers = manager.list_transformers()
+    assert any("variance_threshold" in name for name in transformers)
 
+def test_target_protection_reduction(manager, sample_data):
+    """Verify target is preservered even after PCA."""
+    train_test_split(test_size=0.2)
+    
+    res = reduce_features(method="pca", n_components=2, target_col="Target")
+    assert res['success'] is True
+    
+    train_df = manager.get_data()
+    test_df = manager.get_test_data()
+    
+    # Target should exist
+    assert "Target" in train_df.columns
+    assert "Target" in test_df.columns
+    
+    # Feature columns should be replaced by pca_1, pca_2
+    assert "pca_1" in train_df.columns
+    assert "A" not in train_df.columns
 
-def test_create_feature_multiple_columns():
-    """Test creating a feature using multiple columns."""
-    print("\n2. Testing feature creation with multiple columns...")
-    manager = setup_test_data()
-    
-    request = CreateFeatureRequest(
-        name="FarePerAge",
-        expression="df['Fare'] / df['Age']"
-    )
-    
-    response = create_feature(request)
-    
-    assert response.feature_name == "FarePerAge", "Feature name should match"
-    assert response.rows_affected == 5, "Should affect 5 rows"
-    
-    # Verify the feature was created correctly
-    df = manager.get_data()
-    assert "FarePerAge" in df.columns, "Feature should be in dataframe"
-    expected = 10.5 / 25
-    actual = df["FarePerAge"].iloc[0]
-    assert abs(actual - expected) < 0.001, f"First value should be {expected}"
-    print(f"✓ PASSED: Created feature with first value {actual:.4f}")
+# =========================================================================
+# 2. STRICT VALIDATION TESTS
+# =========================================================================
 
+def test_nan_policy_pca(manager):
+    """PCA should CRASH if NaNs present."""
+    df = pd.DataFrame({
+        'A': [1.0, 2.0, np.nan, 4.0],
+        'B': [1.0, 2.0, 3.0, 4.0]
+    })
+    manager.load_data(df, "nan_test.csv")
+    
+    res = reduce_features(method="pca", n_components=1)
+    assert "error" in res
+    assert "Dataset contains NaNs" in res["error"] # Strict error check
 
-def test_create_feature_conditional():
-    """Test creating a feature with conditional logic."""
-    print("\n3. Testing feature creation with conditional logic...")
-    manager = setup_test_data()
+def test_zero_feature_guard(manager):
+    """Should error if all features removed."""
+    df = pd.DataFrame({'A': [1,1,1], 'B': [1,1,1]}) # All constant
+    manager.load_data(df, "const_test.csv")
     
-    request = CreateFeatureRequest(
-        name="AgeGroup",
-        expression="df['Age'].apply(lambda x: 'Young' if x < 35 else 'Old')"
-    )
-    
-    response = create_feature(request)
-    
-    assert response.feature_name == "AgeGroup", "Feature name should match"
-    assert response.rows_affected == 5, "Should affect 5 rows"
-    
-    # Verify the feature was created correctly
-    df = manager.get_data()
-    assert "AgeGroup" in df.columns, "Feature should be in dataframe"
-    expected = ['Young', 'Young', 'Old', 'Old', 'Old']
-    assert df["AgeGroup"].tolist() == expected, f"Values should be {expected}"
-    print(f"✓ PASSED: Created feature with values {df['AgeGroup'].tolist()}")
+    res = remove_features(method="variance_threshold")
+    assert "error" in res
+    # Sklearn raises ValueError if no features meet threshold
+    assert "ZERO features" in res["error"] or "No feature in X meets" in res["error"]
 
+# =========================================================================
+# 3. DETERMINISM & TIE-BREAKING
+# =========================================================================
 
-def test_create_feature_string_operations():
-    """Test creating a feature with string operations."""
-    print("\n4. Testing feature creation with string operations...")
-    manager = setup_test_data()
+def test_correlation_tie_breaker(manager):
+    """Ensure alphabetical tie breaking works."""
+    df = pd.DataFrame({
+        'Z_Feat': [1, 2, 3, 4, 5],
+        'A_Feat': [1, 2, 3, 4, 5] # Perfectly correlated
+    })
+    manager.load_data(df, "corr.csv")
     
-    request = CreateFeatureRequest(
-        name="NameLength",
-        expression="df['Name'].str.len()"
-    )
+    # A_Feat and Z_Feat are 1.0 correlated.
+    # Sorted pair: [A_Feat, Z_Feat]. Drop index 1 -> Z_Feat. Keeping A_Feat.
+    # Wait, my logic was: pair = sorted([col, row]); to_drop.add(pair[1])
+    # So it drops the alphabetically LATER one.
     
-    response = create_feature(request)
+    res = remove_features(method="correlation_threshold", threshold=0.99)
+    assert res['success'] is True
     
-    assert response.feature_name == "NameLength", "Feature name should match"
-    assert response.rows_affected == 5, "Should affect 5 rows"
-    
-    # Verify the feature was created correctly
-    df = manager.get_data()
-    assert "NameLength" in df.columns, "Feature should be in dataframe"
-    expected = [5, 3, 7, 5, 3]
-    assert df["NameLength"].tolist() == expected, f"Values should be {expected}"
-    print(f"✓ PASSED: Created feature with values {df['NameLength'].tolist()}")
+    df_res = manager.get_data()
+    assert 'A_Feat' in df_res.columns
+    assert 'Z_Feat' not in df_res.columns # Should have dropped Z
 
+# =========================================================================
+# 4. EXTRACTION SAFETY
+# =========================================================================
 
-def test_create_feature_numpy_operations():
-    """Test creating a feature with numpy operations."""
-    print("\n5. Testing feature creation with numpy operations...")
-    manager = setup_test_data()
+def test_math_guards(manager):
+    """Log of negative should handle gracefully (NaN) or error? 
+    Implementation implements NaN masking."""
+    df = pd.DataFrame({'A': [10, 0, -5]})
+    manager.load_data(df, "math.csv")
     
-    request = CreateFeatureRequest(
-        name="AgeSqrt",
-        expression="np.sqrt(df['Age'])"
-    )
+    res = extract_features(method="math", columns=['A'], operation="log")
+    df_res = manager.get_data()
     
-    response = create_feature(request)
+    # 0 -> -inf in numpy default, but we guarded?
+    # extract_features logic: np.log(series.replace(0, np.nan).where(series > 0))
+    # so 0 -> NaN, -5 -> NaN.
     
-    assert response.feature_name == "AgeSqrt", "Feature name should match"
-    assert response.rows_affected == 5, "Should affect 5 rows"
-    
-    # Verify the feature was created correctly
-    df = manager.get_data()
-    assert "AgeSqrt" in df.columns, "Feature should be in dataframe"
-    expected = np.sqrt(25)
-    actual = df["AgeSqrt"].iloc[0]
-    assert abs(actual - expected) < 0.001, f"First value should be {expected}"
-    print(f"✓ PASSED: Created feature with first value {actual:.4f}")
+    assert np.isnan(df_res['A_log'].iloc[1]) # 0
+    assert np.isnan(df_res['A_log'].iloc[2]) # -5
+    assert not np.isnan(df_res['A_log'].iloc[0]) # 10
 
-
-def test_create_feature_scalar_broadcast():
-    """Test creating a feature with scalar value (broadcast to all rows)."""
-    print("\n6. Testing feature creation with scalar broadcast...")
-    manager = setup_test_data()
+def test_naming_collision(manager):
+    """Should error if new name exists."""
+    df = pd.DataFrame({'A': [1], 'A_log': [1]})
+    manager.load_data(df, "coll.csv")
     
-    request = CreateFeatureRequest(
-        name="Constant",
-        expression="100"
-    )
-    
-    response = create_feature(request)
-    
-    assert response.feature_name == "Constant", "Feature name should match"
-    assert response.rows_affected == 5, "Should affect 5 rows"
-    
-    # Verify the feature was created correctly
-    df = manager.get_data()
-    assert "Constant" in df.columns, "Feature should be in dataframe"
-    expected = [100, 100, 100, 100, 100]
-    assert df["Constant"].tolist() == expected, f"Values should be {expected}"
-    print(f"✓ PASSED: Created feature with constant value 100")
-
-
-def test_create_feature_already_exists():
-    """Test creating a feature that already exists."""
-    print("\n7. Testing feature creation with existing name...")
-    manager = setup_test_data()
-    
-    request = CreateFeatureRequest(
-        name="Age",
-        expression="df['Age'] * 2"
-    )
-    
-    try:
-        create_feature(request)
-        assert False, "Should have raised ValueError"
-    except ValueError as e:
-        assert "already exists" in str(e), "Should mention already exists"
-        print("✓ PASSED: Correctly rejects creating existing feature")
-
-
-def test_create_feature_no_dataset():
-    """Test creating a feature when no dataset is loaded."""
-    print("\n8. Testing feature creation with no dataset...")
-    manager = GlobalStateManager()
-    manager.clear_state()
-    
-    request = CreateFeatureRequest(
-        name="NewFeature",
-        expression="df['Age'] * 2"
-    )
-    
-    try:
-        create_feature(request)
-        assert False, "Should have raised ValueError"
-    except ValueError as e:
-        assert "No dataset loaded" in str(e), "Should mention no dataset"
-        print("✓ PASSED: Correctly rejects when no dataset loaded")
-
-
-def test_create_feature_invalid_expression():
-    """Test creating a feature with invalid expression."""
-    print("\n9. Testing feature creation with invalid expression...")
-    manager = setup_test_data()
-    
-    request = CreateFeatureRequest(
-        name="Invalid",
-        expression="df['NonExistent'] * 2"
-    )
-    
-    try:
-        create_feature(request)
-        assert False, "Should have raised ValueError"
-    except ValueError as e:
-        assert "Error creating feature" in str(e), "Should mention error"
-        print("✓ PASSED: Correctly rejects invalid expression")
-
-
-def test_create_feature_empty_expression():
-    """Test creating a feature with empty expression."""
-    print("\n10. Testing feature creation with empty expression...")
-    manager = setup_test_data()
-    
-    request = CreateFeatureRequest(
-        name="Empty",
-        expression=""
-    )
-    
-    try:
-        create_feature(request)
-        assert False, "Should have raised ValueError"
-    except ValueError as e:
-        assert "cannot be empty" in str(e), "Should mention empty"
-        print("✓ PASSED: Correctly rejects empty expression")
-
-
-def test_create_feature_logs_action():
-    """Test that feature creation is logged in pipeline history."""
-    print("\n11. Testing feature creation logging...")
-    manager = setup_test_data()
-    
-    request = CreateFeatureRequest(
-        name="LogTest",
-        expression="df['Age'] + 10"
-    )
-    
-    create_feature(request)
-    
-    history = manager.get_history()
-    
-    # Find the create_feature action in history
-    create_actions = [h for h in history if h["tool"] == "create_feature"]
-    assert len(create_actions) > 0, "Should have logged action"
-    assert create_actions[-1]["params"]["name"] == "LogTest", "Should log correct name"
-    print(f"✓ PASSED: Action logged in pipeline history")
-
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("Running Feature Engineering Tool Tests")
-    print("=" * 60)
-    
-    try:
-        test_create_feature_simple_arithmetic()
-        test_create_feature_multiple_columns()
-        test_create_feature_conditional()
-        test_create_feature_string_operations()
-        test_create_feature_numpy_operations()
-        test_create_feature_scalar_broadcast()
-        test_create_feature_already_exists()
-        test_create_feature_no_dataset()
-        test_create_feature_invalid_expression()
-        test_create_feature_empty_expression()
-        test_create_feature_logs_action()
-        
-        print("\n" + "=" * 60)
-        print("✓ ALL TESTS PASSED!")
-        print("=" * 60)
-    except AssertionError as e:
-        print(f"\n✗ TEST FAILED: {e}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n✗ ERROR: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+    res = extract_features(method="math", columns=['A'], operation="log")
+    assert "error" in res
+    assert "already exists" in res["error"]

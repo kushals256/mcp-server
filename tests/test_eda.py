@@ -6,7 +6,7 @@ import pandas as pd
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.eda import describe_dataset
+from tools.eda import describe_dataset, DescribeDatasetRequest
 
 def create_dummy_data():
     data = {
@@ -16,12 +16,14 @@ def create_dummy_data():
         'description': ['Short', 'Medium length', 'Very long description text here', 'Short', 'Medium', 'Longer text', 'S', 'M', 'L', 'XL']
     }
     df = pd.DataFrame(data)
+    # Ensure directory exists
+    os.makedirs("data", exist_ok=True)
     df.to_csv("data/test_eda.csv", index=False)
     print("Created dummy dataset: data/test_eda.csv")
 
 def test_describe_dataset():
     print("\nTesting describe_dataset...")
-    result = describe_dataset("test_eda.csv")
+    result = describe_dataset(DescribeDatasetRequest(dataset_name="test_eda.csv"))
     
     # Check for errors
     if "error" in result:

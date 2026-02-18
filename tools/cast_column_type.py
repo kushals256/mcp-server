@@ -11,15 +11,23 @@ Functions:
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List
+from pydantic import BaseModel, Field
 
 from utils.state_manager import GlobalStateManager
 from tools.discovery import load_dataset_metadata
 
 
-def cast_column_type(
-    dataset_name: str,
-    columns: List[Dict[str, str]]
-) -> Dict[str, Any]:
+class ColumnTypeSpec(BaseModel):
+    column: str = Field(..., description="Name of the column to cast")
+    dtype: str = Field(..., description="Target data type (e.g. 'int', 'float', 'datetime', 'category')")
+
+
+class CastColumnTypeRequest(BaseModel):
+    dataset_name: str = Field(..., description="Name of the dataset (e.g., 'data.csv').")
+    columns: List[ColumnTypeSpec] = Field(..., description="List of columns to cast with their target types")
+
+
+def cast_column_type(request: CastColumnTypeRequest) -> Dict[str, Any]:
     """
     Cast specified columns to desired data types.
     
@@ -35,10 +43,7 @@ def cast_column_type(
         - category: Categorical type (for optimization)
     
     Args:
-        dataset_name: Name of the dataset (e.g., 'data.csv').
-        columns: List of dictionaries with 'column' and 'dtype' keys.
-                 Example: [{"column": "age", "dtype": "int"}, 
-                          {"column": "date", "dtype": "datetime"}]
+        request: CastColumnTypeRequest containing dataset_name and columns specification.
         
     Returns:
         Dictionary with structure:
@@ -50,16 +55,8 @@ def cast_column_type(
             "remaining_rows": int
         }
     """
-    # Validation: Check columns parameter
-    if not isinstance(columns, list) or len(columns) == 0:
-        return {"error": "Parameter 'columns' must be a non-empty list of dictionaries."}
-    
-    # Validate each column specification
-    for col_spec in columns:
-        if not isinstance(col_spec, dict):
-            return {"error": "Each item in 'columns' must be a dictionary."}
-        if "column" not in col_spec or "dtype" not in col_spec:
-            return {"error": "Each column specification must have 'column' and 'dtype' keys."}
+    dataset_name = request.dataset_name
+    columns_specs = request.columns
     
     manager = GlobalStateManager()
     
@@ -82,9 +79,9 @@ def cast_column_type(
     errors = []
     
     # Process each column casting request
-    for col_spec in columns:
-        column = col_spec["column"]
-        target_dtype = col_spec["dtype"].lower().strip()
+    for spec in columns_specs:
+        column = spec.column
+        target_dtype = spec.dtype.lower().strip()
         
         # Validate column exists
         if column not in df_cast.columns:

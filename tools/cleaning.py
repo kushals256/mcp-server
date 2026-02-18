@@ -1,9 +1,15 @@
 import pandas as pd
 from typing import Dict, Any, List, Optional, Union
+from pydantic import BaseModel, Field
 from utils.state_manager import GlobalStateManager
 from tools.discovery import load_dataset_metadata
 
-def drop_duplicate_rows(dataset_name: str, subset_columns: Optional[List[str]] = None, keep: str = 'first') -> Dict[str, int]:
+class DropDuplicateRowsRequest(BaseModel):
+    dataset_name: str = Field(..., description="Name of the dataset file (e.g. 'test.csv').")
+    subset_columns: Optional[List[str]] = Field(None, description="List of columns to check for duplicates. If None, checks all columns.")
+    keep: str = Field("first", description="'first', 'last', or 'none'.")
+
+def drop_duplicate_rows(request: DropDuplicateRowsRequest) -> Dict[str, int]:
     """
     Remove duplicate rows from the dataset.
     
@@ -11,10 +17,11 @@ def drop_duplicate_rows(dataset_name: str, subset_columns: Optional[List[str]] =
     use the 'save_dataset' tool explicitly.
     
     Args:
-        dataset_name: Name of the dataset file (e.g. 'test.csv').
-        subset_columns: List of columns to check for duplicates. If None, checks all columns.
-        keep: 'first', 'last', or 'none'.
+        request: DropDuplicateRowsRequest containing dataset_name, subset_columns, and keep strategy.
     """
+    dataset_name = request.dataset_name
+    subset_columns = request.subset_columns
+    keep = request.keep
     manager = GlobalStateManager()
     
     # 1. Ensure Data is Loaded

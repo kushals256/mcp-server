@@ -112,58 +112,192 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
                 reason=f"Column '{column}' is not numeric",
                 estimated_memory_mb=current_memory_mb
             )
-        else:
-            estimated_memory_mb = current_memory_mb * (1 - 0.03)
-            response = ValidateActionResponse(
-                allowed=True,
-                reason=f"Outlier removal on '{column}' using {method} is safe",
-                estimated_memory_mb=estimated_memory_mb
+        
+        # Estimate memory (typically removes 1-5% of rows)
+        estimated_rows_removed = int(len(df) * 0.03)  # Conservative 3% estimate
+        estimated_memory_mb = current_memory_mb * (1 - 0.03)
+        
+        return ValidateActionResponse(
+            allowed=True,
+            reason=f"Outlier removal on '{column}' using {method} is safe",
+            estimated_memory_mb=estimated_memory_mb
+        )
+    
+    elif tool == "handle_missing_values":
+        column = params.get("column")
+        strategy = params.get("strategy")
+        
+        if not column:
+            return ValidateActionResponse(
+                allowed=False,
+                reason="No column specified for missing value handling",
+                estimated_memory_mb=current_memory_mb
             )
+        
+        if column not in df.columns:
+            return ValidateActionResponse(
+                allowed=False,
+                reason=f"Column '{column}' not found in dataset",
+                estimated_memory_mb=current_memory_mb
+            )
+        
+        missing_count = df[column].isnull().sum()
+        if missing_count == 0:
+            return ValidateActionResponse(
+                allowed=True,
+                reason=f"No missing values in '{column}', operation will have no effect",
+                estimated_memory_mb=current_memory_mb
+            )
+        
+        if strategy == "drop_rows":
+            # Estimate memory after dropping rows
+            estimated_memory_mb = current_memory_mb * (1 - missing_count / len(df))
+        else:
+            # Imputation doesn't change memory significantly
+            estimated_memory_mb = current_memory_mb
+        
+        return ValidateActionResponse(
+            allowed=True,
+            reason=f"Handling missing values in '{column}' using {strategy} is safe",
+            estimated_memory_mb=estimated_memory_mb
+        )
     
     elif tool == "create_feature":
         name = params.get("name")
         expression = params.get("expression")
         
         if not name:
-            response = ValidateActionResponse(allowed=False, reason="No feature name specified", estimated_memory_mb=current_memory_mb)
-        elif not expression:
-            response = ValidateActionResponse(allowed=False, reason="No expression specified", estimated_memory_mb=current_memory_mb)
-        elif name in df.columns:
-            response = ValidateActionResponse(allowed=False, reason=f"Feature '{name}' already exists", estimated_memory_mb=current_memory_mb)
-        else:
-            avg_col_size = current_memory_mb / len(df.columns) if len(df.columns) > 0 else 1.0
-            estimated_memory_mb = current_memory_mb + avg_col_size
-            response = ValidateActionResponse(allowed=True, reason=f"Creating feature '{name}' is safe", estimated_memory_mb=estimated_memory_mb)
+            return ValidateActionResponse(
+                allowed=False,
+                reason="No feature name specified",
+                estimated_memory_mb=current_memory_mb
+            )
+        
+        if not expression:
+            return ValidateActionResponse(
+                allowed=False,
+                reason="No expression specified for feature creation",
+                estimated_memory_mb=current_memory_mb
+            )
+        
+        if name in df.columns:
+            return ValidateActionResponse(
+                allowed=False,
+                reason=f"Feature '{name}' already exists in dataset",
+                estimated_memory_mb=current_memory_mb
+            )
+        
+        # Estimate memory increase (one additional column)
+        # Assume average column size
+        avg_col_size = current_memory_mb / len(df.columns) if len(df.columns) > 0 else 1.0
+        estimated_memory_mb = current_memory_mb + avg_col_size
+        
+        return ValidateActionResponse(
+            allowed=True,
+            reason=f"Creating feature '{name}' is safe",
+            estimated_memory_mb=estimated_memory_mb
+        )
     
     elif tool == "train_test_split":
         test_size = params.get("test_size", 0.2)
+        
         if test_size <= 0 or test_size >= 1:
-            response = ValidateActionResponse(allowed=False, reason="test_size must be between 0 and 1", estimated_memory_mb=current_memory_mb)
-        else:
-            estimated_memory_mb = current_memory_mb * 2
-            response = ValidateActionResponse(allowed=True, reason=f"Train-test split with test_size={test_size} is safe", estimated_memory_mb=estimated_memory_mb)
+            return ValidateActionResponse(
+                allowed=False,
+                reason="test_size must be between 0 and 1",
+                estimated_memory_mb=current_memory_mb
+            )
+        
+        # Memory doubles (train + test sets)
+        estimated_memory_mb = current_memory_mb * 2
+        
+        return ValidateActionResponse(
+            allowed=True,
+            reason=f"Train-test split with test_size={test_size} is safe",
+            estimated_memory_mb=estimated_memory_mb
+        )
     
     elif tool in ["describe_dataset", "correlation_analysis", "detect_data_quality_issues"]:
-        response = ValidateActionResponse(allowed=True, reason=f"{tool} is a read-only operation", estimated_memory_mb=current_memory_mb)
+        # Read-only operations are always safe
+        return ValidateActionResponse(
+            allowed=True,
+            reason=f"{tool} is a read-only operation",
+            estimated_memory_mb=current_memory_mb
+        )
     
-    elif tool == "drop_duplicates" or tool == "remove_duplicates":
+    elif tool == "drop_duplicates":
+        # Estimate memory (typically removes 0-10% of rows)
         duplicate_count = df.duplicated().sum()
         estimated_memory_mb = current_memory_mb * (1 - duplicate_count / len(df))
-        response = ValidateActionResponse(
+        
+        return ValidateActionResponse(
             allowed=True,
             reason=f"Dropping duplicates is safe (estimated {duplicate_count} duplicates)",
             estimated_memory_mb=estimated_memory_mb
         )
     
+    elif tool in [
+        "normalize_categorical_text",
+        "harmonize_categorical_values",
+        "cluster_similar_categories",
+    ]:
+        column = params.get("column")
+        if not column:
+            return ValidateActionResponse(
+                allowed=False,
+                reason="No column specified for normalization",
+                estimated_memory_mb=current_memory_mb
+            )
+        if column not in df.columns:
+            return ValidateActionResponse(
+                allowed=False,
+                reason=f"Column '{column}' not found in dataset",
+                estimated_memory_mb=current_memory_mb
+            )
+        if pd.api.types.is_numeric_dtype(df[column]):
+            return ValidateActionResponse(
+                allowed=False,
+                reason=f"Column '{column}' is numeric, normalization requires string/categorical columns",
+                estimated_memory_mb=current_memory_mb
+            )
+        return ValidateActionResponse(
+            allowed=True,
+            reason=f"{tool} on '{column}' is safe (in-place string transform)",
+            estimated_memory_mb=current_memory_mb
+        )
+    
+    elif tool == "ml_prepare_categorical":
+        column = params.get("column")
+        method = params.get("method", "deduplicate")
+        if not column:
+            return ValidateActionResponse(
+                allowed=False,
+                reason="No column specified for ML preparation",
+                estimated_memory_mb=current_memory_mb
+            )
+        if column not in df.columns:
+            return ValidateActionResponse(
+                allowed=False,
+                reason=f"Column '{column}' not found in dataset",
+                estimated_memory_mb=current_memory_mb
+            )
+        if method == "gap_encoder":
+            n_components = params.get("n_components", 10)
+            avg_col_size = current_memory_mb / len(df.columns) if len(df.columns) > 0 else 1.0
+            estimated_memory_mb = current_memory_mb + avg_col_size * n_components
+        else:
+            estimated_memory_mb = current_memory_mb
+        return ValidateActionResponse(
+            allowed=True,
+            reason=f"ml_prepare_categorical ({method}) on '{column}' is safe",
+            estimated_memory_mb=estimated_memory_mb
+        )
+    
     else:
-        response = ValidateActionResponse(allowed=False, reason=f"Unknown tool '{tool}'. Cannot validate safety.", estimated_memory_mb=current_memory_mb)
+        # Unknown tool - be conservative
+        return ValidateActionResponse(
+            allowed=False,
+            reason=f"Unknown tool '{tool}'. Cannot validate safety.",
+            estimated_memory_mb=current_memory_mb
+        )
 
-    # Log the result of the validation
-    manager.log_action("validate_operation", {
-        "target_tool": tool,
-        "allowed": response.allowed,
-        "reason": response.reason,
-        "estimated_memory_mb": round(response.estimated_memory_mb, 2)
-    })
-
-    return response

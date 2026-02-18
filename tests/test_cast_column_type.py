@@ -19,7 +19,7 @@ for dep in dependencies_to_mock:
     except ImportError:
         sys.modules[dep] = MagicMock()
 
-from tools.cast_column_type import cast_column_type
+from tools.cast_column_type import cast_column_type, CastColumnTypeRequest
 from utils.state_manager import GlobalStateManager
 
 def setup_test_data():
@@ -41,10 +41,13 @@ def test_cast_basic_numeric():
     manager.load_data(df, "test_numeric.csv")
     
     # Cast strings to numbers
-    result = cast_column_type("test_numeric.csv", [
-        {"column": "age_str", "dtype": "int"},
-        {"column": "price_str", "dtype": "float"}
-    ])
+    result = cast_column_type(CastColumnTypeRequest(
+        dataset_name="test_numeric.csv",
+        columns=[
+            {"column": "age_str", "dtype": "int"},
+            {"column": "price_str", "dtype": "float"}
+        ]
+    ))
     
     assert result["success"] is True
     assert len(result["columns_cast"]) == 2
@@ -68,9 +71,10 @@ def test_cast_datetime():
     manager = GlobalStateManager()
     manager.load_data(df, "test_datetime.csv")
     
-    result = cast_column_type("test_datetime.csv", [
-        {"column": "date_str", "dtype": "datetime"}
-    ])
+    result = cast_column_type(CastColumnTypeRequest(
+        dataset_name="test_datetime.csv",
+        columns=[{"column": "date_str", "dtype": "datetime"}]
+    ))
     
     assert result["success"] is True
     
@@ -85,9 +89,10 @@ def test_cast_category():
     manager = GlobalStateManager()
     manager.load_data(df, "test_category.csv")
     
-    result = cast_column_type("test_category.csv", [
-        {"column": "category_code", "dtype": "category"}
-    ])
+    result = cast_column_type(CastColumnTypeRequest(
+        dataset_name="test_category.csv",
+        columns=[{"column": "category_code", "dtype": "category"}]
+    ))
     
     assert result["success"] is True
     
@@ -101,9 +106,10 @@ def test_cast_boolean():
     manager = GlobalStateManager()
     manager.load_data(df, "test_boolean.csv")
     
-    result = cast_column_type("test_boolean.csv", [
-        {"column": "boolean_num", "dtype": "bool"}
-    ])
+    result = cast_column_type(CastColumnTypeRequest(
+        dataset_name="test_boolean.csv",
+        columns=[{"column": "boolean_num", "dtype": "bool"}]
+    ))
     
     assert result["success"] is True
     
@@ -119,27 +125,32 @@ def test_errors_and_validation():
     manager.load_data(df, "test_errors.csv")
     
     # Test non-existent column
-    result = cast_column_type("test_errors.csv", [
-        {"column": "non_existent", "dtype": "int"}
-    ])
+    result = cast_column_type(CastColumnTypeRequest(
+        dataset_name="test_errors.csv",
+        columns=[{"column": "non_existent", "dtype": "int"}]
+    ))
     
     assert result["success"] is False
     assert result["errors"] is not None
     assert "not found" in result["errors"][0]["error"]
     
     # Test unsupported type
-    result = cast_column_type("test_errors.csv", [
-        {"column": "already_int", "dtype": "unsupported_type"}
-    ])
+    result = cast_column_type(CastColumnTypeRequest(
+        dataset_name="test_errors.csv",
+        columns=[{"column": "already_int", "dtype": "unsupported_type"}]
+    ))
     
     assert result["success"] is False
     assert "Unsupported data type" in result["errors"][0]["error"]
     
     # Test mixed success and failure
-    result = cast_column_type("test_errors.csv", [
-        {"column": "age_str", "dtype": "int"},
-        {"column": "non_existent", "dtype": "int"}
-    ])
+    result = cast_column_type(CastColumnTypeRequest(
+        dataset_name="test_errors.csv",
+        columns=[
+            {"column": "age_str", "dtype": "int"},
+            {"column": "non_existent", "dtype": "int"}
+        ]
+    ))
     
     assert result["success"] is True  # Partial success is considered success for the operation
     assert len(result["columns_cast"]) == 1
