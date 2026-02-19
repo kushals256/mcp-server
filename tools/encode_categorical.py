@@ -35,7 +35,6 @@ from config import (
     MEMORY_RISK_THRESHOLDS,
 )
 from utils.state_manager import GlobalStateManager
-from tools.discovery import load_dataset_metadata
 
 
 # ============================================================================
@@ -95,10 +94,10 @@ def encode_categorical_feature(
 
     # Ensure dataset is loaded
     if manager.get_dataset_name() != dataset_name:
-        try:
-            load_dataset_metadata(dataset_name)
-        except Exception as e:
-            return {"error": f"Failed to load dataset: {str(e)}"}
+        return {
+            "error": f"Dataset '{dataset_name}' is not currently loaded. "
+                     "Call load_dataset_metadata() explicitly to load it first."
+        }
 
     df = manager.get_data()
     if df is None:
@@ -178,8 +177,7 @@ def encode_categorical_feature(
         df_encoded = df_encoded.drop(columns=[column])
         original_dropped = True
 
-    # ---- Restore NaN rows (for methods that may have filled them) ----
-    # For one-hot/binary/hashing: set all new encoded columns to NaN where original was NaN
+    # ---- Restore NaN rows ----
     if handle_unknown != "new_category":
         for nc in new_columns:
             if nc in df_encoded.columns:
@@ -194,11 +192,11 @@ def encode_categorical_feature(
         total_rows=total_rows,
     )
 
-    # Cardinality after (unique combos across new columns)
+    # Cardinality after
     if n_new == 1 and new_columns[0] in df_encoded.columns:
         cardinality_after = int(df_encoded[new_columns[0]].nunique(dropna=True))
     else:
-        cardinality_after = cardinality_before  # structural expansion, cardinality preserved
+        cardinality_after = cardinality_before
 
     # ---- Dimensionality change ----
     cols_removed = 1 if original_dropped else 0
@@ -279,11 +277,9 @@ def _encode_label(
     le = LabelEncoder()
     new_col = f"{prefix}_encoded"
 
-    # Fit on non-null values
     non_null = df[column].dropna()
     le.fit(non_null)
 
-    # Transform: fill NaN temporarily, encode, restore NaN
     encoded = pd.Series(index=df.index, dtype="Int64")
     encoded.loc[~nan_mask] = le.transform(df.loc[~nan_mask, column])
     encoded.loc[nan_mask] = pd.NA
@@ -313,7 +309,6 @@ def _encode_ordinal(
     new_col = f"{prefix}_ordinal"
     df[new_col] = df[column].map(ordinal_mapping)
 
-    # Values not in mapping become NaN (intentional)
     unmapped = df.loc[~nan_mask & df[new_col].isna(), column].unique()
 
     metadata: Dict[str, Any] = {"mapping": ordinal_mapping}
@@ -368,7 +363,6 @@ def _encode_target(
         return_df=True,
     )
 
-    # Fit-transform
     y = df[target_column]
     encoded_df = encoder.fit_transform(df[[column]], y)
     df[new_col] = encoded_df[column].values
@@ -399,7 +393,6 @@ def _encode_binary(
     encoded_df = encoder.fit_transform(df[[column]])
     new_columns = [c for c in encoded_df.columns if c != column]
 
-    # Rename with prefix
     rename_map = {c: f"{prefix}_bin_{i}" for i, c in enumerate(new_columns)}
     encoded_df = encoded_df.rename(columns=rename_map)
     new_columns = list(rename_map.values())
@@ -441,7 +434,6 @@ def _encode_hashing(
     encoded_df = encoder.fit_transform(df[[column]])
     raw_cols = [c for c in encoded_df.columns if c != column]
 
-    # Rename with prefix
     rename_map = {c: f"{prefix}_hash_{i}" for i, c in enumerate(raw_cols)}
     encoded_df = encoded_df.rename(columns=rename_map)
     new_columns = list(rename_map.values())
@@ -449,7 +441,6 @@ def _encode_hashing(
     for nc in new_columns:
         df[nc] = encoded_df[nc].values
 
-    # Collision risk estimate
     collision_risk = round(1.0 - (n_comp / max(cardinality, 1)), 4)
     collision_risk = max(0.0, min(1.0, collision_risk))
 
@@ -510,7 +501,6 @@ def _compute_risk_indicators(
 ) -> Dict[str, Any]:
     """Compute memory, leakage, and overfit risk indicators."""
 
-    # Memory risk (based on new columns)
     if n_new_columns <= MEMORY_RISK_THRESHOLDS["low"]:
         memory_risk = "low"
     elif n_new_columns <= MEMORY_RISK_THRESHOLDS["medium"]:
@@ -518,10 +508,8 @@ def _compute_risk_indicators(
     else:
         memory_risk = "high"
 
-    # Leakage risk
-    leakage_risk = method in ("target",)  # leave_one_out is leakage-safe
+    leakage_risk = method in ("target",)
 
-    # Overfit risk (cardinality vs sample size)
     ratio = cardinality / max(total_rows, 1)
     if ratio < 0.01:
         overfit_risk = "low"

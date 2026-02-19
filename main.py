@@ -14,15 +14,16 @@ Workflow Phases:
 from mcp.server.fastmcp import FastMCP
 
 from config import SERVER_NAME
-from tools.discovery import list_datasets, load_dataset_metadata
+from tools.discovery import list_datasets, load_dataset_metadata, peek_dataset_metadata
 from tools.save_dataset import save_processed_dataset, export_pipeline_config
 from tools.eda import describe_dataset, correlation_analysis
-from tools.data_quality import detect_data_quality_issues
 from tools.data_quality import detect_data_quality_issues
 from tools.remove_outliers import remove_outliers
 from tools.cast_column_type import cast_column_type
 from tools.encode_categorical import encode_categorical_feature
 from tools.train_test_split import train_test_split
+from tools.feature_engineering import create_feature
+from tools.validation import validate_action
 
 # ============================================================================
 # Initialize MCP Server
@@ -39,6 +40,7 @@ mcp = FastMCP(SERVER_NAME)
 # List available datasets and load metadata into global state
 mcp.tool()(list_datasets)
 mcp.tool()(load_dataset_metadata)
+mcp.tool()(peek_dataset_metadata)
 
 # Phase 2: Persistence
 # Save processed data and export pipeline configurations
@@ -53,22 +55,16 @@ mcp.tool()(correlation_analysis)
 
 # Phase 4: Transformation
 # Clean data and remove outliers
-# Phase 4: Transformation
-# Clean data and remove outliers
 mcp.tool()(remove_outliers)
 mcp.tool()(cast_column_type)
 mcp.tool()(encode_categorical_feature)
 mcp.tool()(train_test_split)
 
-
-# Register Phase 5 Tools (Feature Engineering)
-from tools.feature_engineering import create_feature
+# Phase 5: Feature Engineering
 mcp.tool()(create_feature)
 
-# Register Phase 6 Tools (Validation & Safety)
-from tools.validation import validate_action
+# Phase 6: Validation & Safety
 mcp.tool()(validate_action)
 
 if __name__ == "__main__":
     mcp.run()
-

@@ -18,7 +18,6 @@ from typing import Dict, Any, Literal
 
 from config import DEFAULT_ZSCORE_THRESHOLD, DEFAULT_IQR_MULTIPLIER
 from utils.state_manager import GlobalStateManager
-from tools.discovery import load_dataset_metadata
 
 
 def remove_outliers(
@@ -62,10 +61,10 @@ def remove_outliers(
     
     # 2. Ensure dataset is loaded
     if manager.get_dataset_name() != dataset_name:
-        try:
-            load_dataset_metadata(dataset_name)
-        except Exception as e:
-            return {"error": f"Failed to load dataset: {str(e)}"}
+        return {
+            "error": f"Dataset '{dataset_name}' is not currently loaded. "
+                     "Call load_dataset_metadata() explicitly to load it first."
+        }
             
     df = manager.get_data()
     if df is None:
@@ -91,7 +90,6 @@ def remove_outliers(
     # 4. Outlier Logic (Pure Numpy/Pandas)
     
     if method == "zscore":
-        # Calculate Z-scores: (x - mean) / std
         std_dev = series.std(skipna=True)
         mean_val = series.mean(skipna=True)
         
@@ -99,20 +97,15 @@ def remove_outliers(
         stats_meta["std"] = round(std_dev, 4) if not np.isnan(std_dev) else None
         
         if std_dev == 0 or np.isnan(std_dev):
-            # Constant value -> No outliers (Conservative safety)
             mask = pd.Series(True, index=df.index)
             stats_meta["zero_variance_detected"] = True
         else:
             z_scores = (series - mean_val) / std_dev
-            # Keep if Nan OR |Z| <= threshold
             mask = (z_scores.isna()) | (abs(z_scores) <= threshold)
-            
-            # Record bounds for reference (implied)
             stats_meta["lower_bound"] = round(mean_val - (threshold * std_dev), 4)
             stats_meta["upper_bound"] = round(mean_val + (threshold * std_dev), 4)
         
     elif method == "iqr":
-        # Calculate IQR bounds using LINEAR interpolation regarding requested refactor
         Q1 = series.quantile(0.25, interpolation='linear')
         Q3 = series.quantile(0.75, interpolation='linear')
         IQR = Q3 - Q1
@@ -122,7 +115,6 @@ def remove_outliers(
         stats_meta["iqr"] = round(IQR, 4)
         
         if IQR == 0:
-             # Zero IQR -> No outliers (Conservative safety)
              mask = pd.Series(True, index=df.index)
              stats_meta["zero_variance_detected"] = True
         else:
@@ -132,19 +124,14 @@ def remove_outliers(
             stats_meta["lower_bound"] = round(lower_bound, 4)
             stats_meta["upper_bound"] = round(upper_bound, 4)
             
-            # Keep if Nan OR within bounds
             mask = (series.isna()) | ((series >= lower_bound) & (series <= upper_bound))
         
     else:
         return {"error": f"Unknown method '{method}'. Use 'zscore' or 'iqr'."}
         
-    # 5. Apply Filter & Update State (Immutability pattern)
-    # create new dataframe only after mask is fully computed
+    # 5. Apply Filter & Update State
     dataset_cleaned = df[mask].copy()
-    
-    # Important: Reset Index
     dataset_cleaned = dataset_cleaned.reset_index(drop=True)
-    
     rows_removed = initial_rows - len(dataset_cleaned)
     
     # Update global state

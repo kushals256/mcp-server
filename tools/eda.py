@@ -14,12 +14,11 @@ Functions:
 
 import pandas as pd
 import numpy as np
-from typing import Dict, Any, List, Union, Optional
+from typing import Dict, Any
 from scipy import stats
 from sklearn.metrics import mutual_info_score
 
 from utils.state_manager import GlobalStateManager
-from tools.discovery import load_dataset_metadata
 
 
 def describe_dataset(dataset_name: str) -> Dict[str, Any]:
@@ -34,13 +33,11 @@ def describe_dataset(dataset_name: str) -> Dict[str, Any]:
     """
     manager = GlobalStateManager()
     
-    # 1. State Management: Load if needed
     if manager.get_dataset_name() != dataset_name:
-        try:
-            # Re-use discovery logic to load
-            load_dataset_metadata(dataset_name)
-        except Exception as e:
-            return {"error": f"Failed to load dataset: {str(e)}"}
+        return {
+            "error": f"Dataset '{dataset_name}' is not currently loaded. "
+                     "Call load_dataset_metadata() explicitly to load it first."
+        }
             
     df = manager.get_data()
     if df is None:
@@ -54,18 +51,13 @@ def describe_dataset(dataset_name: str) -> Dict[str, Any]:
         "categorical_summary": {}
     }
 
-    # 2. Numerical Analysis
+    # Numerical Analysis
     numeric_cols = df.select_dtypes(include=[np.number]).columns
     for col in numeric_cols:
         series = df[col]
-        # Basic Stats
         desc = series.describe()
-        
-        # Advanced Stats
         skew = series.skew()
         kurt = series.kurt()
-        
-        # Data Quality
         n_zeros = (series == 0).sum()
         n_negatives = (series < 0).sum()
         
@@ -89,27 +81,17 @@ def describe_dataset(dataset_name: str) -> Dict[str, Any]:
             }
         }
 
-    # 3. Categorical Analysis
+    # Categorical Analysis
     cat_cols = df.select_dtypes(include=['object', 'category', 'bool']).columns
     for col in cat_cols:
-        series = df[col].astype(str) # Ensure string for uniformity
-        
-        # Basic Stats
+        series = df[col].astype(str)
         n_unique = series.nunique()
         missing_count = df[col].isnull().sum()
-        
-        # Frequencies
         value_counts = series.value_counts()
         top_5 = value_counts.head(5).to_dict()
         top_5_with_pct = {k: {"count": v, "percentage": round((v/len(df))*100, 2)} for k, v in top_5.items()}
-        
-        # Rare Categories (< 5%)
-        # Note: value_counts(normalize=True) gives proportions
         rare_mask = series.value_counts(normalize=True) < 0.05
         n_rare = rare_mask.sum()
-        
-        # String Metadata
-        # Better: use original series for length calc, ignoring nulls
         original_series = df[col].dropna().astype(str)
         avg_len = original_series.str.len().mean() if not original_series.empty else 0
         
@@ -122,6 +104,7 @@ def describe_dataset(dataset_name: str) -> Dict[str, Any]:
         }
         
     return summary
+
 
 def cramers_v(x: pd.Series, y: pd.Series) -> float:
     """
@@ -151,6 +134,7 @@ def cramers_v(x: pd.Series, y: pd.Series) -> float:
         rcorr = r - ((r-1)**2)/(n-1)
         kcorr = k - ((k-1)**2)/(n-1)
         return np.sqrt(phi2corr / min((kcorr-1), (rcorr-1)))
+
 
 def correlation_ratio(categories: pd.Series, measurements: pd.Series) -> float:
     """
@@ -186,23 +170,24 @@ def correlation_ratio(categories: pd.Series, measurements: pd.Series) -> float:
         return 0.0
     return np.sqrt(numerator / denominator)
 
+
 def correlation_analysis(dataset_name: str, method: str = 'pearson') -> Dict[str, Any]:
     """
     Analyze correlations between features in the dataset.
     Supports Num-Num (Pearson/Spearman/Kendall), Cat-Cat (Cramér's V/MI), and Num-Cat (Eta/ANOVA).
     """
     manager = GlobalStateManager()
+
     if manager.get_dataset_name() != dataset_name:
-        try:
-            load_dataset_metadata(dataset_name)
-        except Exception as e:
-            return {"error": f"Failed to load dataset: {str(e)}"}
+        return {
+            "error": f"Dataset '{dataset_name}' is not currently loaded. "
+                     "Call load_dataset_metadata() explicitly to load it first."
+        }
             
     df = manager.get_data()
     if df is None:
         return {"error": "Dataset loaded but DataFrame is None."}
 
-    # Prepare outputs
     results = {
         "dataset_name": dataset_name,
         "numerical_correlations": [],
@@ -210,11 +195,10 @@ def correlation_analysis(dataset_name: str, method: str = 'pearson') -> Dict[str
         "numerical_categorical_correlations": []
     }
     
-    # 1. Numerical vs Numerical
+    # Numerical vs Numerical
     num_cols = df.select_dtypes(include=[np.number]).columns
     if len(num_cols) > 1:
         corr_matrix = df[num_cols].corr(method=method)
-        # Iterate over triangle to avoid duplicates
         for i in range(len(num_cols)):
             for j in range(i+1, len(num_cols)):
                 col1, col2 = num_cols[i], num_cols[j]
@@ -230,8 +214,7 @@ def correlation_analysis(dataset_name: str, method: str = 'pearson') -> Dict[str
                     "method": method
                 })
 
-    # 2. Categorical vs Categorical (Cramér's V & MI)
-    # Filter for low cardinality (< 20 unique) to avoid ID columns
+    # Categorical vs Categorical (Cramér's V & MI)
     cat_cols = [c for c in df.select_dtypes(include=['object', 'category', 'bool']).columns 
                 if df[c].nunique() < 20 and df[c].nunique() > 1]
     
@@ -239,7 +222,6 @@ def correlation_analysis(dataset_name: str, method: str = 'pearson') -> Dict[str
         for i in range(len(cat_cols)):
             for j in range(i+1, len(cat_cols)):
                 col1, col2 = cat_cols[i], cat_cols[j]
-                # Drop NAs for calculation
                 clean_df = df[[col1, col2]].dropna()
                 if clean_df.empty: continue
                 
@@ -256,22 +238,19 @@ def correlation_analysis(dataset_name: str, method: str = 'pearson') -> Dict[str
                     "mutual_info": round(mi, 4)
                 })
 
-    # 3. Numerical vs Categorical (Correlation Ratio & ANOVA)
+    # Numerical vs Categorical (Correlation Ratio & ANOVA)
     if len(num_cols) > 0 and len(cat_cols) > 0:
         for num_col in num_cols:
             for cat_col in cat_cols:
                 clean_df = df[[num_col, cat_col]].dropna()
                 if clean_df.empty: continue
                 
-                # Correlation Ratio (Eta)
                 eta = correlation_ratio(clean_df[cat_col], clean_df[num_col])
-                
-                # ANOVA F-Test
                 groups = [group[num_col].values for name, group in clean_df.groupby(cat_col)]
                 if len(groups) > 1:
                     f_stat, p_val = stats.f_oneway(*groups)
                 else:
-                    f_stat, p_val = 0, 1.0 # Cannot compare 1 group
+                    f_stat, p_val = 0, 1.0
                 
                 results["numerical_categorical_correlations"].append({
                     "feature_1": num_col,

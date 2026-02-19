@@ -13,7 +13,6 @@ import numpy as np
 from typing import Dict, Any, List
 
 from utils.state_manager import GlobalStateManager
-from tools.discovery import load_dataset_metadata
 
 
 def cast_column_type(
@@ -65,10 +64,10 @@ def cast_column_type(
     
     # Ensure dataset is loaded
     if manager.get_dataset_name() != dataset_name:
-        try:
-            load_dataset_metadata(dataset_name)
-        except Exception as e:
-            return {"error": f"Failed to load dataset: {str(e)}"}
+        return {
+            "error": f"Dataset '{dataset_name}' is not currently loaded. "
+                     "Call load_dataset_metadata() explicitly to load it first."
+        }
             
     df = manager.get_data()
     if df is None:
@@ -130,7 +129,7 @@ def cast_column_type(
                 })
                 continue
             
-            # Count NaN values introduced by coercion (for numeric/datetime conversions)
+            # Count NaN values introduced by coercion
             null_count = df_cast[column].isnull().sum() - df[column].isnull().sum()
             
             new_dtype = str(df_cast[column].dtype)
