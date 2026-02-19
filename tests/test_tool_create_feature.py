@@ -38,9 +38,10 @@ def test_create_feature_simple_arithmetic():
     
     response = create_feature(request)
     
-    assert response.feature_name == "AgeDouble", "Feature name should match"
-    assert response.rows_affected == 5, "Should affect 5 rows"
-    assert len(response.sample_values) == 5, "Should have 5 sample values"
+    assert "error" not in response, f"Should not have error: {response.get('error')}"
+    assert response["feature_name"] == "AgeDouble", "Feature name should match"
+    assert response["rows_affected"] == 5, "Should affect 5 rows"
+    assert len(response["sample_values"]) == 5, "Should have 5 sample values"
     
     # Verify the feature was created correctly
     df = manager.get_data()
@@ -61,8 +62,9 @@ def test_create_feature_multiple_columns():
     
     response = create_feature(request)
     
-    assert response.feature_name == "FarePerAge", "Feature name should match"
-    assert response.rows_affected == 5, "Should affect 5 rows"
+    assert "error" not in response, f"Should not have error: {response.get('error')}"
+    assert response["feature_name"] == "FarePerAge", "Feature name should match"
+    assert response["rows_affected"] == 5, "Should affect 5 rows"
     
     # Verify the feature was created correctly
     df = manager.get_data()
@@ -85,8 +87,9 @@ def test_create_feature_conditional():
     
     response = create_feature(request)
     
-    assert response.feature_name == "AgeGroup", "Feature name should match"
-    assert response.rows_affected == 5, "Should affect 5 rows"
+    assert "error" not in response, f"Should not have error: {response.get('error')}"
+    assert response["feature_name"] == "AgeGroup", "Feature name should match"
+    assert response["rows_affected"] == 5, "Should affect 5 rows"
     
     # Verify the feature was created correctly
     df = manager.get_data()
@@ -108,8 +111,9 @@ def test_create_feature_string_operations():
     
     response = create_feature(request)
     
-    assert response.feature_name == "NameLength", "Feature name should match"
-    assert response.rows_affected == 5, "Should affect 5 rows"
+    assert "error" not in response, f"Should not have error: {response.get('error')}"
+    assert response["feature_name"] == "NameLength", "Feature name should match"
+    assert response["rows_affected"] == 5, "Should affect 5 rows"
     
     # Verify the feature was created correctly
     df = manager.get_data()
@@ -131,8 +135,9 @@ def test_create_feature_numpy_operations():
     
     response = create_feature(request)
     
-    assert response.feature_name == "AgeSqrt", "Feature name should match"
-    assert response.rows_affected == 5, "Should affect 5 rows"
+    assert "error" not in response, f"Should not have error: {response.get('error')}"
+    assert response["feature_name"] == "AgeSqrt", "Feature name should match"
+    assert response["rows_affected"] == 5, "Should affect 5 rows"
     
     # Verify the feature was created correctly
     df = manager.get_data()
@@ -155,8 +160,9 @@ def test_create_feature_scalar_broadcast():
     
     response = create_feature(request)
     
-    assert response.feature_name == "Constant", "Feature name should match"
-    assert response.rows_affected == 5, "Should affect 5 rows"
+    assert "error" not in response, f"Should not have error: {response.get('error')}"
+    assert response["feature_name"] == "Constant", "Feature name should match"
+    assert response["rows_affected"] == 5, "Should affect 5 rows"
     
     # Verify the feature was created correctly
     df = manager.get_data()
@@ -176,12 +182,10 @@ def test_create_feature_already_exists():
         expression="df['Age'] * 2"
     )
     
-    try:
-        create_feature(request)
-        assert False, "Should have raised ValueError"
-    except ValueError as e:
-        assert "already exists" in str(e), "Should mention already exists"
-        print("✓ PASSED: Correctly rejects creating existing feature")
+    response = create_feature(request)
+    assert "error" in response, "Should return error dict"
+    assert "already exists" in response["error"], "Should mention already exists"
+    print("✓ PASSED: Correctly rejects creating existing feature")
 
 
 def test_create_feature_no_dataset():
@@ -195,12 +199,10 @@ def test_create_feature_no_dataset():
         expression="df['Age'] * 2"
     )
     
-    try:
-        create_feature(request)
-        assert False, "Should have raised ValueError"
-    except ValueError as e:
-        assert "No dataset loaded" in str(e), "Should mention no dataset"
-        print("✓ PASSED: Correctly rejects when no dataset loaded")
+    response = create_feature(request)
+    assert "error" in response, "Should return error dict"
+    assert "No dataset loaded" in response["error"], "Should mention no dataset"
+    print("✓ PASSED: Correctly rejects when no dataset loaded")
 
 
 def test_create_feature_invalid_expression():
@@ -213,12 +215,10 @@ def test_create_feature_invalid_expression():
         expression="df['NonExistent'] * 2"
     )
     
-    try:
-        create_feature(request)
-        assert False, "Should have raised ValueError"
-    except ValueError as e:
-        assert "Error creating feature" in str(e), "Should mention error"
-        print("✓ PASSED: Correctly rejects invalid expression")
+    response = create_feature(request)
+    assert "error" in response, "Should return error dict"
+    assert "Error creating feature" in response["error"] or "Invalid column" in response["error"], "Should mention error"
+    print("✓ PASSED: Correctly rejects invalid expression")
 
 
 def test_create_feature_empty_expression():
@@ -231,12 +231,10 @@ def test_create_feature_empty_expression():
         expression=""
     )
     
-    try:
-        create_feature(request)
-        assert False, "Should have raised ValueError"
-    except ValueError as e:
-        assert "cannot be empty" in str(e), "Should mention empty"
-        print("✓ PASSED: Correctly rejects empty expression")
+    response = create_feature(request)
+    assert "error" in response, "Should return error dict"
+    assert "cannot be empty" in response["error"], "Should mention empty"
+    print("✓ PASSED: Correctly rejects empty expression")
 
 
 def test_create_feature_logs_action():

@@ -116,15 +116,22 @@ def load_dataset_metadata(filename: str) -> DatasetMetadata:
             - missing_percentages_sample: Dict of missing value percentages per column
             - estimated_row_count: Total number of rows
             - preview: First 5 rows as list of dictionaries
+            - error: Error message if operation failed
 
-    Raises:
-        FileNotFoundError: If the specified file doesn't exist in DATA_DIR.
-        ValueError: If the file format is not supported.
-        Exception: For other errors during file reading or processing.
+    Note:
+        Returns DatasetMetadata with error field populated if operation fails.
     """
     path = os.path.join(DATA_DIR, filename)
     if not os.path.exists(path):
-        raise FileNotFoundError(f"Dataset {filename} not found.")
+        return DatasetMetadata(
+            filename=filename,
+            columns=[],
+            dtypes={},
+            missing_percentages_sample={},
+            estimated_row_count=0,
+            preview=[],
+            error=f"Dataset {filename} not found."
+        )
 
     try:
         # Load the FULL dataset into memory (destructive by design)
@@ -137,7 +144,15 @@ def load_dataset_metadata(filename: str) -> DatasetMetadata:
         elif filename.endswith(".json"):
             df = pd.read_json(path)
         else:
-             raise ValueError("Unsupported file format")
+            return DatasetMetadata(
+                filename=filename,
+                columns=[],
+                dtypes={},
+                missing_percentages_sample={},
+                estimated_row_count=0,
+                preview=[],
+                error="Unsupported file format"
+            )
             
         # Store in GlobalStateManager
         # Note: We use load_data() here because this is a FRESH load from disk.
@@ -158,8 +173,15 @@ def load_dataset_metadata(filename: str) -> DatasetMetadata:
         )
 
     except Exception as e:
-        # Propagate so the MCP framework can surface the error
-        raise e
+        return DatasetMetadata(
+            filename=filename,
+            columns=[],
+            dtypes={},
+            missing_percentages_sample={},
+            estimated_row_count=0,
+            preview=[],
+            error=str(e)
+        )
 
 
 def peek_dataset_metadata(filename: str) -> DatasetMetadata:
@@ -177,15 +199,22 @@ def peek_dataset_metadata(filename: str) -> DatasetMetadata:
     Returns:
         DatasetMetadata: Same structure as load_dataset_metadata, but computed
         purely from the file on disk and without touching GlobalStateManager.
+        Returns DatasetMetadata with error field populated if operation fails.
 
-    Raises:
-        FileNotFoundError: If the specified file doesn't exist in DATA_DIR.
-        ValueError: If the file format is not supported.
-        Exception: For other errors during file reading or processing.
+    Note:
+        Returns DatasetMetadata with error field populated if operation fails.
     """
     path = os.path.join(DATA_DIR, filename)
     if not os.path.exists(path):
-        raise FileNotFoundError(f"Dataset {filename} not found.")
+        return DatasetMetadata(
+            filename=filename,
+            columns=[],
+            dtypes={},
+            missing_percentages_sample={},
+            estimated_row_count=0,
+            preview=[],
+            error=f"Dataset {filename} not found."
+        )
 
     try:
         # Read from disk but DO NOT call GlobalStateManager
@@ -203,4 +232,12 @@ def peek_dataset_metadata(filename: str) -> DatasetMetadata:
         )
 
     except Exception as e:
-        raise e
+        return DatasetMetadata(
+            filename=filename,
+            columns=[],
+            dtypes={},
+            missing_percentages_sample={},
+            estimated_row_count=0,
+            preview=[],
+            error=str(e)
+        )
