@@ -51,10 +51,13 @@ def create_feature(request: CreateFeatureRequest) -> Dict[str, Any]:
     if not expression.strip():
         return {"error": "Expression cannot be empty."}
     
+    # Create a copy to avoid mutating original data
+    df_copy = df.copy()
+    
     try:
         # Create a safe evaluation context with df, pd, and np
         eval_context = {
-            'df': df,
+            'df': df_copy,
             'pd': pd,
             'np': np
         }
@@ -64,33 +67,33 @@ def create_feature(request: CreateFeatureRequest) -> Dict[str, Any]:
         
         # Handle different return types
         if isinstance(new_feature, pd.Series):
-            if len(new_feature) != len(df):
-                return {"error": f"Expression returned a Series with {len(new_feature)} rows, but dataset has {len(df)} rows."}
-            df[feature_name] = new_feature
+            if len(new_feature) != len(df_copy):
+                return {"error": f"Expression returned a Series with {len(new_feature)} rows, but dataset has {len(df_copy)} rows."}
+            df_copy[feature_name] = new_feature
         elif isinstance(new_feature, (list, np.ndarray)):
-            if len(new_feature) != len(df):
-                return {"error": f"Expression returned {len(new_feature)} values, but dataset has {len(df)} rows."}
-            df[feature_name] = new_feature
+            if len(new_feature) != len(df_copy):
+                return {"error": f"Expression returned {len(new_feature)} values, but dataset has {len(df_copy)} rows."}
+            df_copy[feature_name] = new_feature
         elif np.isscalar(new_feature):
             # Broadcast scalar to all rows
-            df[feature_name] = new_feature
+            df_copy[feature_name] = new_feature
         else:
             return {"error": f"Expression returned unsupported type: {type(new_feature)}. Expected Series, list, array, or scalar."}
         
         # Update state
-        manager.load_data(df, manager.get_dataset_name())
+        manager.load_data(df_copy, manager.get_dataset_name())
         manager.log_action("create_feature", {
             "name": feature_name,
             "expression": expression
         })
         
         # Get sample values (first 5 non-null values)
-        sample_values = df[feature_name].dropna().head(5).tolist()
+        sample_values = df_copy[feature_name].dropna().head(5).tolist()
         
         return {
             "feature_name": feature_name,
-            "rows_affected": len(df),
-            "dtype": str(df[feature_name].dtype),
+            "rows_affected": len(df_copy),
+            "dtype": str(df_copy[feature_name].dtype),
             "sample_values": sample_values
         }
         
