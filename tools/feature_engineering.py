@@ -3,7 +3,6 @@ import numpy as np
 from typing import Dict, Any
 from pydantic import BaseModel, Field
 from utils.state_manager import GlobalStateManager
-from tools.discovery import load_dataset_metadata
 
 
 class CreateFeatureRequest(BaseModel):
@@ -67,12 +66,10 @@ def create_feature(request: CreateFeatureRequest) -> CreateFeatureResponse:
         
         # Handle different return types
         if isinstance(new_feature, pd.Series):
-            # Direct series assignment
             if len(new_feature) != len(df):
                 raise ValueError(f"Expression returned a Series with {len(new_feature)} rows, but dataset has {len(df)} rows.")
             df[feature_name] = new_feature
         elif isinstance(new_feature, (list, np.ndarray)):
-            # Convert to series
             if len(new_feature) != len(df):
                 raise ValueError(f"Expression returned {len(new_feature)} values, but dataset has {len(df)} rows.")
             df[feature_name] = new_feature
