@@ -17,20 +17,30 @@ import numpy as np
 from typing import Dict, Any
 from scipy import stats
 from sklearn.metrics import mutual_info_score
+from pydantic import BaseModel, Field
 
 from utils.state_manager import GlobalStateManager
 
+class DescribeDatasetRequest(BaseModel):
+    dataset_name: str = Field(..., description="Name of the dataset file (e.g., 'data.csv').")
 
-def describe_dataset(dataset_name: str) -> Dict[str, Any]:
+class CorrelationAnalysisRequest(BaseModel):
+    dataset_name: str = Field(..., description="Name of the dataset file (e.g., 'data.csv').")
+    method: str = Field("pearson", description="Correlation method ('pearson', 'kendall', 'spearman').")
+
+
+
+def describe_dataset(request: DescribeDatasetRequest) -> Dict[str, Any]:
     """
     Generate a comprehensive statistical summary of the dataset.
     
     Args:
-        dataset_name: Name of the dataset file (e.g., 'data.csv').
+        request: DescribeDatasetRequest containing dataset_name.
         
     Returns:
         Dictionary containing numerical and categorical summaries.
     """
+    dataset_name = request.dataset_name
     manager = GlobalStateManager()
     
     if manager.get_dataset_name() != dataset_name:
@@ -171,11 +181,14 @@ def correlation_ratio(categories: pd.Series, measurements: pd.Series) -> float:
     return np.sqrt(numerator / denominator)
 
 
-def correlation_analysis(dataset_name: str, method: str = 'pearson') -> Dict[str, Any]:
+# def correlation_analysis(dataset_name: str, method: str = 'pearson') -> Dict[str, Any]: code written by jaideep
+def correlation_analysis(request: CorrelationAnalysisRequest) -> Dict[str, Any]:
     """
     Analyze correlations between features in the dataset.
     Supports Num-Num (Pearson/Spearman/Kendall), Cat-Cat (Cramér's V/MI), and Num-Cat (Eta/ANOVA).
     """
+    dataset_name = request.dataset_name
+    method = request.method
     manager = GlobalStateManager()
 
     if manager.get_dataset_name() != dataset_name:

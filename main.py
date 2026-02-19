@@ -22,8 +22,15 @@ from tools.remove_outliers import remove_outliers
 from tools.cast_column_type import cast_column_type
 from tools.encode_categorical import encode_categorical_feature
 from tools.train_test_split import train_test_split
+from tools.cleaning import drop_duplicate_rows
+from tools.handle_missing_values import handle_missing_values
+from tools.normalize_categorical import normalize_categorical_text
+from tools.harmonize_categorical import harmonize_categorical_values
+from tools.cluster_categorical import cluster_similar_categories
+from tools.ml_prepare_categorical import ml_prepare_categorical
 from tools.feature_engineering import create_feature
 from tools.validation import validate_action
+from tools.persistence import generate_preprocessing_report
 
 # ============================================================================
 # Initialize MCP Server
@@ -55,15 +62,26 @@ mcp.tool()(correlation_analysis)
 
 # Phase 4: Transformation
 # Clean data and remove outliers
+mcp.tool()(drop_duplicate_rows)
+mcp.tool()(handle_missing_values)
 mcp.tool()(remove_outliers)
 mcp.tool()(cast_column_type)
 mcp.tool()(encode_categorical_feature)
 mcp.tool()(train_test_split)
 
-# Phase 5: Feature Engineering
-mcp.tool()(create_feature)
 
-# Phase 6: Validation & Safety
+# Phase 4.5: Categorical Normalization
+# Surface cleanup, synonym mapping, fuzzy clustering, ML prep
+mcp.tool()(normalize_categorical_text)
+mcp.tool()(harmonize_categorical_values)
+mcp.tool()(cluster_similar_categories)
+mcp.tool()(ml_prepare_categorical)
+
+# Register Phase 5 Tools (Feature Engineering)
+mcp.tool()(create_feature)
+mcp.tool()(generate_preprocessing_report)
+
+# Register Phase 6 Tools (Validation & Safety)
 mcp.tool()(validate_action)
 
 if __name__ == "__main__":

@@ -50,6 +50,10 @@ def list_datasets() -> List[DatasetInfo]:
     Note:
         Supported formats: .csv, .json
     """
+    # OPTIONAL: Log this action if you want "Listed Datasets" to appear in your report
+    # manager = GlobalStateManager()
+    # manager.log_action("list_datasets", {})
+
     if not os.path.exists(DATA_DIR):
         return []
 
@@ -124,9 +128,20 @@ def load_dataset_metadata(filename: str) -> DatasetMetadata:
 
     try:
         # Load the FULL dataset into memory (destructive by design)
-        df = _read_dataset(path, filename)
+        # df = _read_dataset(path, filename) # code written by jaideep
 
         # Store in GlobalStateManager (this overwrites the current in-memory state)
+        # Load the FULL dataset into memory as requested
+        if filename.endswith(".csv"):
+            df = pd.read_csv(path)
+        elif filename.endswith(".json"):
+            df = pd.read_json(path)
+        else:
+             raise ValueError("Unsupported file format")
+            
+        # Store in GlobalStateManager
+        # Note: We use load_data() here because this is a FRESH load from disk.
+        # This correctly logs "load_data" to the history.
         manager = GlobalStateManager()
         manager.load_data(df, filename)
 

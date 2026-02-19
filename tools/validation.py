@@ -32,11 +32,18 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
     
     # If no dataset loaded, most operations are unsafe
     if df is None and request.tool not in ["list_datasets", "load_dataset_metadata"]:
-        return ValidateActionResponse(
+        response = ValidateActionResponse(
             allowed=False,
             reason="No dataset loaded in memory. Load a dataset first.",
             estimated_memory_mb=0.0
         )
+        # Log failed validation
+        manager.log_action("validate_operation", {
+            "target_tool": request.tool,
+            "allowed": False,
+            "reason": response.reason
+        })
+        return response
     
     tool = request.tool
     params = request.params
@@ -46,11 +53,12 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
     if df is not None:
         current_memory_mb = df.memory_usage(deep=True).sum() / (1024 * 1024)
     
+    response = None
+
     # Validation logic per tool
     if tool == "load_dataset_metadata":
-        # Estimate file size (this is a rough estimate)
         estimated_memory_mb = 10.0  # Default estimate
-        return ValidateActionResponse(
+        response = ValidateActionResponse(
             allowed=True,
             reason="Dataset loading is allowed",
             estimated_memory_mb=estimated_memory_mb
@@ -59,51 +67,47 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
     elif tool == "drop_columns":
         columns = params.get("columns", [])
         if not columns:
-            return ValidateActionResponse(
+            response = ValidateActionResponse(
                 allowed=False,
                 reason="No columns specified for dropping",
                 estimated_memory_mb=current_memory_mb
             )
-        
-        # Check if columns exist
-        missing_cols = [col for col in columns if col not in df.columns]
-        if missing_cols:
-            return ValidateActionResponse(
-                allowed=False,
-                reason=f"Columns not found: {missing_cols}",
-                estimated_memory_mb=current_memory_mb
-            )
-        
-        # Estimate memory after dropping columns
-        remaining_cols = [col for col in df.columns if col not in columns]
-        estimated_memory_mb = df[remaining_cols].memory_usage(deep=True).sum() / (1024 * 1024)
-        
-        return ValidateActionResponse(
-            allowed=True,
-            reason=f"Dropping {len(columns)} column(s) is safe",
-            estimated_memory_mb=estimated_memory_mb
-        )
+        else:
+            # Check if columns exist
+            missing_cols = [col for col in columns if col not in df.columns]
+            if missing_cols:
+                response = ValidateActionResponse(
+                    allowed=False,
+                    reason=f"Columns not found: {missing_cols}",
+                    estimated_memory_mb=current_memory_mb
+                )
+            else:
+                remaining_cols = [col for col in df.columns if col not in columns]
+                estimated_memory_mb = df[remaining_cols].memory_usage(deep=True).sum() / (1024 * 1024)
+                response = ValidateActionResponse(
+                    allowed=True,
+                    reason=f"Dropping {len(columns)} column(s) is safe",
+                    estimated_memory_mb=estimated_memory_mb
+                )
     
     elif tool == "remove_outliers":
         column = params.get("column")
         method = params.get("method")
         
         if not column:
-            return ValidateActionResponse(
+            response = ValidateActionResponse(
                 allowed=False,
                 reason="No column specified for outlier removal",
                 estimated_memory_mb=current_memory_mb
             )
-        
-        if column not in df.columns:
-            return ValidateActionResponse(
+        elif column not in df.columns:
+            response = ValidateActionResponse(
                 allowed=False,
                 reason=f"Column '{column}' not found in dataset",
                 estimated_memory_mb=current_memory_mb
             )
-        
-        if not pd.api.types.is_numeric_dtype(df[column]):
-            return ValidateActionResponse(
+        elif not pd.api.types.is_numeric_dtype(df[column]):
+            response = ValidateActionResponse(
                 allowed=False,
                 reason=f"Column '{column}' is not numeric",
                 estimated_memory_mb=current_memory_mb
@@ -232,6 +236,63 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
             estimated_memory_mb=estimated_memory_mb
         )
     
+    elif tool in [
+        "normalize_categorical_text",
+        "harmonize_categorical_values",
+        "cluster_similar_categories",
+    ]:
+        column = params.get("column")
+        if not column:
+            return ValidateActionResponse(
+                allowed=False,
+                reason="No column specified for normalization",
+                estimated_memory_mb=current_memory_mb
+            )
+        if column not in df.columns:
+            return ValidateActionResponse(
+                allowed=False,
+                reason=f"Column '{column}' not found in dataset",
+                estimated_memory_mb=current_memory_mb
+            )
+        if pd.api.types.is_numeric_dtype(df[column]):
+            return ValidateActionResponse(
+                allowed=False,
+                reason=f"Column '{column}' is numeric, normalization requires string/categorical columns",
+                estimated_memory_mb=current_memory_mb
+            )
+        return ValidateActionResponse(
+            allowed=True,
+            reason=f"{tool} on '{column}' is safe (in-place string transform)",
+            estimated_memory_mb=current_memory_mb
+        )
+    
+    elif tool == "ml_prepare_categorical":
+        column = params.get("column")
+        method = params.get("method", "deduplicate")
+        if not column:
+            return ValidateActionResponse(
+                allowed=False,
+                reason="No column specified for ML preparation",
+                estimated_memory_mb=current_memory_mb
+            )
+        if column not in df.columns:
+            return ValidateActionResponse(
+                allowed=False,
+                reason=f"Column '{column}' not found in dataset",
+                estimated_memory_mb=current_memory_mb
+            )
+        if method == "gap_encoder":
+            n_components = params.get("n_components", 10)
+            avg_col_size = current_memory_mb / len(df.columns) if len(df.columns) > 0 else 1.0
+            estimated_memory_mb = current_memory_mb + avg_col_size * n_components
+        else:
+            estimated_memory_mb = current_memory_mb
+        return ValidateActionResponse(
+            allowed=True,
+            reason=f"ml_prepare_categorical ({method}) on '{column}' is safe",
+            estimated_memory_mb=estimated_memory_mb
+        )
+    
     else:
         # Unknown tool - be conservative
         return ValidateActionResponse(
@@ -239,3 +300,4 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
             reason=f"Unknown tool '{tool}'. Cannot validate safety.",
             estimated_memory_mb=current_memory_mb
         )
+

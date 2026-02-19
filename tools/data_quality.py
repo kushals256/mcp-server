@@ -34,7 +34,6 @@ from config import (
 )
 from utils.state_manager import GlobalStateManager
 
-
 def detect_data_quality_issues(dataset_name: str) -> Dict[str, Any]:
     """
     Automatically detect data quality problems in a dataset.
@@ -63,6 +62,13 @@ def detect_data_quality_issues(dataset_name: str) -> Dict[str, Any]:
     if df is None:
         return {"error": "Dataset loaded but DataFrame is None."}
     
+    # Log the check action (Analysis step)
+    manager.log_action("detect_data_quality_issues", {
+        "dataset_name": dataset_name,
+        "rows_checked": len(df),
+        "columns_checked": len(df.columns)
+    })
+
     issues = []
     total_rows = len(df)
     
@@ -206,17 +212,6 @@ def detect_data_quality_issues(dataset_name: str) -> Dict[str, Any]:
 def _detect_outliers_adaptive(series: pd.Series, skewness: float, kurtosis: float, n_samples: int):
     """
     Adaptively select and apply outlier detection method based on distribution characteristics.
-    
-    Uses only skewness and kurtosis (no statistical tests) for performance.
-    
-    Args:
-        series: Pandas Series with numerical data (NaN already removed)
-        skewness: Pre-calculated skewness
-        kurtosis: Pre-calculated kurtosis (excess kurtosis)
-        n_samples: Sample size
-        
-    Returns:
-        Tuple of (method_name, outlier_mask, parameters_dict)
     """
     abs_skew = abs(skewness)
     abs_kurt = abs(kurtosis)
@@ -261,13 +256,6 @@ def _detect_outliers_adaptive(series: pd.Series, skewness: float, kurtosis: floa
 def _detect_outliers_iqr(series: pd.Series, multiplier: float = DEFAULT_IQR_MULTIPLIER):
     """
     Detect outliers using Interquartile Range (IQR) method.
-    
-    Args:
-        series: Pandas Series with numerical data
-        multiplier: IQR multiplier for fence calculation (default 1.5)
-        
-    Returns:
-        Tuple of (outlier_mask, parameters_dict)
     """
     Q1 = series.quantile(0.25)
     Q3 = series.quantile(0.75)
@@ -293,13 +281,6 @@ def _detect_outliers_iqr(series: pd.Series, multiplier: float = DEFAULT_IQR_MULT
 def _detect_outliers_zscore(series: pd.Series, threshold: float = DEFAULT_ZSCORE_THRESHOLD):
     """
     Detect outliers using Z-score method.
-    
-    Args:
-        series: Pandas Series with numerical data
-        threshold: Z-score threshold (default 3.0 for 99.7% coverage)
-        
-    Returns:
-        Tuple of (outlier_mask, parameters_dict)
     """
     mean = series.mean()
     std = series.std()
