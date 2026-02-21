@@ -300,8 +300,7 @@ def remove_outliers(
     rows_removed = initial_rows - len(dataset_cleaned)
     
     # Update global state
-    # Update global state
-    manager.load_data(dataset_cleaned, dataset_name, preserve_split=True)
+    manager.load_data(dataset_cleaned, dataset_name, reset_split=False)
     
     return {
         "column": column,

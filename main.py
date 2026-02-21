@@ -59,8 +59,6 @@ mcp.tool()(correlation_analysis)
 
 # Phase 4: Transformation
 # Clean data and remove outliers
-# Phase 4: Transformation
-# Clean data and remove outliers
 mcp.tool()(drop_duplicate_rows)
 mcp.tool()(remove_outliers)
 mcp.tool()(cast_column_type)
