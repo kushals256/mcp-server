@@ -14,7 +14,7 @@ Functions:
 
 import pandas as pd
 import numpy as np
-from typing import Dict, Any, Literal
+from typing import Dict, Any, Literal, Optional
 from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
 
@@ -32,7 +32,7 @@ def remove_outliers(
     dataset_name: str,
     column: str,
     method: Literal["zscore", "iqr", "modified_zscore", "isolation_forest", "lof"],
-    threshold: float = None
+    threshold: Optional[float] = None
 ) -> Dict[str, Any]:
     """
     Remove outliers from a dataset using Statistical or Model-Based methods.
@@ -300,8 +300,17 @@ def remove_outliers(
     rows_removed = initial_rows - len(dataset_cleaned)
     
     # Update global state
-    # Update global state
-    manager.load_data(dataset_cleaned, dataset_name, preserve_split=True)
+    if hasattr(manager, 'load_data'):
+        manager.load_data(dataset_cleaned, dataset_name, preserve_split=True)
+    
+    # LOG THE ACTION FOR REPORT GENERATION
+    manager.log_action("remove_data_outliers", {
+        "dataset_name": dataset_name,
+        "column": column,
+        "method": method,
+        "threshold": threshold,
+        "rows_removed": rows_removed
+    })
     
     return {
         "column": column,

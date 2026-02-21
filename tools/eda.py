@@ -8,8 +8,6 @@ Phase 3 (Analysis) of the dataset analysis workflow.
 Functions:
     describe_dataset: Generate comprehensive statistical summaries
     correlation_analysis: Analyze correlations between features
-    cramers_v: Calculate Cramér's V for categorical-categorical association
-    correlation_ratio: Calculate correlation ratio (eta) for categorical-numerical association
 """
 
 import pandas as pd
@@ -30,24 +28,24 @@ class CorrelationAnalysisRequest(BaseModel):
     method: str = Field("pearson", description="Correlation method ('pearson', 'kendall', 'spearman').")
 
 
-
-def describe_dataset(request: DescribeDatasetRequest) -> Dict[str, Any]:
+def describe_dataset(request: Union[DescribeDatasetRequest, str]) -> Dict[str, Any]:
     """
     Generate a comprehensive statistical summary of the dataset.
     
     Args:
-        request: DescribeDatasetRequest containing dataset_name.
+        request: DescribeDatasetRequest or raw dataset_name string.
         
     Returns:
         Dictionary containing numerical and categorical summaries.
     """
-    dataset_name = request.dataset_name
+    # Robust input handling
+    dataset_name = request.dataset_name if hasattr(request, 'dataset_name') else request
+    
     manager = GlobalStateManager()
     
     # 1. State Management: Load if needed
     if manager.get_dataset_name() != dataset_name:
         try:
-            # Re-use discovery logic to load
             load_dataset_metadata(dataset_name)
         except Exception as e:
             return {"error": f"Failed to load dataset: {str(e)}"}
@@ -68,20 +66,15 @@ def describe_dataset(request: DescribeDatasetRequest) -> Dict[str, Any]:
     numeric_cols = df.select_dtypes(include=[np.number]).columns
     for col in numeric_cols:
         series = df[col]
-        # Basic Stats
         desc = series.describe()
-        
-        # Advanced Stats
         skew = series.skew()
         kurt = series.kurt()
-        
-        # Data Quality
         n_zeros = (series == 0).sum()
         n_negatives = (series < 0).sum()
         
         summary["numerical_summary"][col] = {
-            "mean": round(desc['mean'], 4),
-            "std": round(desc['std'], 4),
+            "mean": round(desc['mean'], 4) if not np.isnan(desc['mean']) else 0,
+            "std": round(desc['std'], 4) if not np.isnan(desc['std']) else 0,
             "min": desc['min'],
             "max": desc['max'],
             "quantiles": {
@@ -90,8 +83,8 @@ def describe_dataset(request: DescribeDatasetRequest) -> Dict[str, Any]:
                 "75%": desc['75%']
             },
             "distribution": {
-                "skewness": round(skew, 4),
-                "kurtosis": round(kurt, 4)
+                "skewness": round(skew, 4) if not np.isnan(skew) else 0,
+                "kurtosis": round(kurt, 4) if not np.isnan(kurt) else 0
             },
             "quality_checks": {
                 "num_zeros": int(n_zeros),
@@ -102,24 +95,14 @@ def describe_dataset(request: DescribeDatasetRequest) -> Dict[str, Any]:
     # 3. Categorical Analysis
     cat_cols = df.select_dtypes(include=['object', 'category', 'bool']).columns
     for col in cat_cols:
-        series = df[col].astype(str) # Ensure string for uniformity
-        
-        # Basic Stats
+        series = df[col].astype(str)
         n_unique = series.nunique()
         missing_count = df[col].isnull().sum()
-        
-        # Frequencies
         value_counts = series.value_counts()
         top_5 = value_counts.head(5).to_dict()
         top_5_with_pct = {k: {"count": v, "percentage": round((v/len(df))*100, 2)} for k, v in top_5.items()}
-        
-        # Rare Categories (< 5%)
-        # Note: value_counts(normalize=True) gives proportions
         rare_mask = series.value_counts(normalize=True) < 0.05
         n_rare = rare_mask.sum()
-        
-        # String Metadata
-        # Better: use original series for length calc, ignoring nulls
         original_series = df[col].dropna().astype(str)
         avg_len = original_series.str.len().mean() if not original_series.empty else 0
         
@@ -133,25 +116,10 @@ def describe_dataset(request: DescribeDatasetRequest) -> Dict[str, Any]:
         
     return summary
 
+
 def cramers_v(x: pd.Series, y: pd.Series) -> float:
-    """
-    Calculate Cramér's V statistic for categorical-categorical association.
-    
-    Cramér's V is a measure of association between two nominal variables,
-    ranging from 0 (no association) to 1 (perfect association).
-    
-    Args:
-        x: First categorical variable as pandas Series
-        y: Second categorical variable as pandas Series
-    
-    Returns:
-        float: Cramér's V value between 0 and 1
-    
-    Note:
-        This is a bias-corrected version of Cramér's V that adjusts for
-        sample size and dimensionality.
-    """
     confusion_matrix = pd.crosstab(x, y)
+    if confusion_matrix.empty: return 0.0
     chi2 = stats.chi2_contingency(confusion_matrix)[0]
     n = confusion_matrix.sum().sum()
     phi2 = chi2 / n
@@ -160,29 +128,15 @@ def cramers_v(x: pd.Series, y: pd.Series) -> float:
         phi2corr = max(0, phi2 - ((k-1)*(r-1))/(n-1))
         rcorr = r - ((r-1)**2)/(n-1)
         kcorr = k - ((k-1)**2)/(n-1)
-        return np.sqrt(phi2corr / min((kcorr-1), (rcorr-1)))
+        denom = min((kcorr-1), (rcorr-1))
+        if denom <= 0: return 0.0
+        return np.sqrt(phi2corr / denom)
+
 
 def correlation_ratio(categories: pd.Series, measurements: pd.Series) -> float:
-    """
-    Calculate Correlation Ratio (eta) for categorical-numerical association.
-    
-    The correlation ratio measures the strength of association between a
-    categorical variable and a numerical variable. It ranges from 0 (no association)
-    to 1 (perfect association).
-    
-    Args:
-        categories: Categorical variable as pandas Series
-        measurements: Numerical variable as pandas Series
-    
-    Returns:
-        float: Correlation ratio (eta) value between 0 and 1
-    
-    Note:
-        Similar to ANOVA's eta-squared, this measures the proportion of variance
-        in the numerical variable explained by the categorical variable.
-    """
     fcat, _ = pd.factorize(categories)
     cat_num = np.max(fcat) + 1
+    if cat_num <= 1: return 0.0
     y_avg_array = np.zeros(cat_num)
     n_array = np.zeros(cat_num)
     for i in range(0, cat_num):
@@ -192,17 +146,20 @@ def correlation_ratio(categories: pd.Series, measurements: pd.Series) -> float:
     y_total_avg = np.sum(np.multiply(y_avg_array, n_array)) / np.sum(n_array)
     numerator = np.sum(np.multiply(n_array, np.power(np.subtract(y_avg_array, y_total_avg), 2)))
     denominator = np.sum(np.power(np.subtract(measurements, y_total_avg), 2))
-    if numerator == 0:
-        return 0.0
+    if denominator == 0: return 0.0
     return np.sqrt(numerator / denominator)
 
-def correlation_analysis(request: CorrelationAnalysisRequest) -> Dict[str, Any]:
+
+def correlation_analysis(request: Union[CorrelationAnalysisRequest, str], method: str = "pearson") -> Dict[str, Any]:
     """
-    Analyze correlations between features in the dataset.
-    Supports Num-Num (Pearson/Spearman/Kendall), Cat-Cat (Cramér's V/MI), and Num-Cat (Eta/ANOVA).
+    Analyze correlations between features.
     """
-    dataset_name = request.dataset_name
-    method = request.method
+    if hasattr(request, 'dataset_name'):
+        dataset_name = request.dataset_name
+        method = request.method
+    else:
+        dataset_name = request
+
     manager = GlobalStateManager()
     if manager.get_dataset_name() != dataset_name:
         try:
@@ -214,7 +171,6 @@ def correlation_analysis(request: CorrelationAnalysisRequest) -> Dict[str, Any]:
     if df is None:
         return {"error": "Dataset loaded but DataFrame is None."}
 
-    # Prepare outputs
     results = {
         "dataset_name": dataset_name,
         "numerical_correlations": [],
@@ -222,28 +178,20 @@ def correlation_analysis(request: CorrelationAnalysisRequest) -> Dict[str, Any]:
         "numerical_categorical_correlations": []
     }
     
-    # 1. Numerical vs Numerical
     num_cols = df.select_dtypes(include=[np.number]).columns
     if len(num_cols) > 1:
         corr_matrix = df[num_cols].corr(method=method)
-        # Iterate over triangle to avoid duplicates
         for i in range(len(num_cols)):
             for j in range(i+1, len(num_cols)):
                 col1, col2 = num_cols[i], num_cols[j]
                 val = corr_matrix.loc[col1, col2]
                 sample_n = df[[col1, col2]].dropna().shape[0]
-                
                 results["numerical_correlations"].append({
-                    "feature_1": col1,
-                    "feature_2": col2,
-                    "value": round(val, 4),
-                    "abs_value": round(abs(val), 4),
-                    "sample_size": int(sample_n),
-                    "method": method
+                    "feature_1": col1, "feature_2": col2,
+                    "value": round(val, 4), "abs_value": round(abs(val), 4),
+                    "sample_size": int(sample_n), "method": method
                 })
 
-    # 2. Categorical vs Categorical (Cramér's V & MI)
-    # Filter for low cardinality (< 20 unique) to avoid ID columns
     cat_cols = [c for c in df.select_dtypes(include=['object', 'category', 'bool']).columns 
                 if df[c].nunique() < 20 and df[c].nunique() > 1]
     
@@ -251,47 +199,32 @@ def correlation_analysis(request: CorrelationAnalysisRequest) -> Dict[str, Any]:
         for i in range(len(cat_cols)):
             for j in range(i+1, len(cat_cols)):
                 col1, col2 = cat_cols[i], cat_cols[j]
-                # Drop NAs for calculation
                 clean_df = df[[col1, col2]].dropna()
                 if clean_df.empty: continue
-                
                 cramers = cramers_v(clean_df[col1], clean_df[col2])
                 mi = mutual_info_score(clean_df[col1], clean_df[col2])
-                
                 results["categorical_correlations"].append({
-                    "feature_1": col1,
-                    "feature_2": col2,
-                    "value": round(cramers, 4),
-                    "abs_value": round(abs(cramers), 4),
-                    "sample_size": int(len(clean_df)),
-                    "method": "cramers_v",
+                    "feature_1": col1, "feature_2": col2,
+                    "value": round(cramers, 4), "abs_value": round(abs(cramers), 4),
+                    "sample_size": int(len(clean_df)), "method": "cramers_v",
                     "mutual_info": round(mi, 4)
                 })
 
-    # 3. Numerical vs Categorical (Correlation Ratio & ANOVA)
     if len(num_cols) > 0 and len(cat_cols) > 0:
         for num_col in num_cols:
             for cat_col in cat_cols:
                 clean_df = df[[num_col, cat_col]].dropna()
                 if clean_df.empty: continue
-                
-                # Correlation Ratio (Eta)
                 eta = correlation_ratio(clean_df[cat_col], clean_df[num_col])
-                
-                # ANOVA F-Test
                 groups = [group[num_col].values for name, group in clean_df.groupby(cat_col)]
                 if len(groups) > 1:
                     f_stat, p_val = stats.f_oneway(*groups)
                 else:
-                    f_stat, p_val = 0, 1.0 # Cannot compare 1 group
-                
+                    f_stat, p_val = 0, 1.0
                 results["numerical_categorical_correlations"].append({
-                    "feature_1": num_col,
-                    "feature_2": cat_col,
-                    "value": round(eta, 4),
-                    "abs_value": round(abs(eta), 4),
-                    "sample_size": int(len(clean_df)),
-                    "method": "correlation_ratio",
+                    "feature_1": num_col, "feature_2": cat_col,
+                    "value": round(eta, 4), "abs_value": round(abs(eta), 4),
+                    "sample_size": int(len(clean_df)), "method": "correlation_ratio",
                     "anova_f_stat": round(f_stat, 4) if not np.isnan(f_stat) else 0,
                     "anova_p_val": round(p_val, 6) if not np.isnan(p_val) else 1.0
                 })

@@ -13,7 +13,6 @@ import pandas as pd
 from typing import Optional, List, Dict, Any
 import copy
 
-
 class GlobalStateManager:
     """
     Singleton class for managing the global state of the MCP server.
@@ -25,11 +24,6 @@ class GlobalStateManager:
     
     The singleton pattern ensures that all tools access the same state instance,
     enabling stateful workflow across multiple tool calls.
-    
-    Usage:
-        manager = GlobalStateManager()  # Always returns the same instance
-        manager.load_data(df, "data.csv")
-        df = manager.get_data()
     """
     _instance = None
     
@@ -41,47 +35,39 @@ class GlobalStateManager:
     
     def initialize(self):
         self._current_df: Optional[pd.DataFrame] = None
+        self._test_df: Optional[pd.DataFrame] = None
         self._current_dataset_name: Optional[str] = None
         self._pipeline_history: List[Dict[str, Any]] = []
+        self._transformers: Dict[str, Any] = {}
         
         # Split state
-        self._test_df: Optional[pd.DataFrame] = None
         self._is_split: bool = False
 
-    def load_data(self, df: pd.DataFrame, name: str, reset_split: bool = True):
+    def load_data(self, df: pd.DataFrame, name: str, preserve_split: bool = False, reset_split: bool = True):
         """
-        Load a dataframe into memory and log the action.
-        
-        Stores a defensive COPY of the input DataFrame to prevent the caller
-        from accidentally mutating the internal state after loading.
-        
-        Args:
-            df: Pandas DataFrame to store (a copy will be made)
-            name: Name/identifier for the dataset (e.g., filename)
-            reset_split: Whether to clear the test set/split state (default True).
-                         Set to False if just updating the training set in-place.
+        Load a NEW dataframe into memory from disk.
+        Logs a 'load_data' event.
         """
+        # Store a defensive COPY of the input DataFrame
         self._current_df = df.copy()
         self._current_dataset_name = name
         
-        if reset_split:
+        # If we are loading entirely new data, we usually wipe the test set
+        if not preserve_split and reset_split:
             self._test_df = None
             self._is_split = False
-        
+            
         self.log_action("load_data", {"dataset_name": name})
 
-    def set_split_data(self, train_df: pd.DataFrame, test_df: pd.DataFrame, split_metadata: Dict[str, Any]):
+    def update_data(self, df: pd.DataFrame):
         """
-        Set the state to a split dataset (train/test).
-        
-        Args:
-            train_df: Training set (will become the active dataset)
-            test_df: Test set (stored separately)
-            split_metadata: Metadata about the split (test_size, random_state, etc.)
-        
-        Raises:
-            ValueError: If dataset is already split (must reload to split again)
+        Update the CURRENT training dataframe in memory (e.g., after cleaning).
+        Does NOT log a 'load_data' event (the tool calling this should log its own action).
         """
+        self._current_df = df.copy()
+
+    def set_split_data(self, train_df: pd.DataFrame, test_df: pd.DataFrame, metadata: Dict[str, Any]):
+        """Store split datasets (Train and Test)."""
         if self._is_split:
             raise ValueError("Dataset is already split. Please reload the dataset to start a fresh split.")
             
@@ -90,46 +76,35 @@ class GlobalStateManager:
         self._test_df = test_df.copy()
         self._is_split = True
         
-        self.log_action("train_test_split", split_metadata)
+        self.log_action("train_test_split", metadata)
+
+    def is_split(self) -> bool:
+        """Check if the dataset has been split into train/test."""
+        return self._is_split
 
     def get_data(self) -> Optional[pd.DataFrame]:
         """
-        Get the current dataframe from memory.
-        If split, this returns the TRAINING set.
-        
-        Returns a COPY to prevent accidental mutation of internal state,
-        consistent with get_test_data().
-        
-        Returns:
-            A copy of the current DataFrame if loaded, None otherwise
+        Get the training/main dataset.
+        Returns a COPY to prevent accidental mutation of internal state.
         """
         if self._current_df is not None:
             return self._current_df.copy()
         return None
-        
+    
     def get_test_data(self) -> Optional[pd.DataFrame]:
         """
-        Get the test dataset from memory (if split exists).
+        Get the testing dataset.
         Returns a COPY to prevent accidental mutation.
-        
-        Returns:
-            The test DataFrame if split, None otherwise
         """
         if self._test_df is not None:
-             return self._test_df.copy()
+            return self._test_df.copy()
         return None
     
     def get_dataset_name(self) -> Optional[str]:
         return self._current_dataset_name
 
     def log_action(self, tool: str, params: Dict[str, Any]):
-        """
-        Log an action to the pipeline history.
-        
-        Args:
-            tool: Name of the tool/operation
-            params: Dictionary of parameters used in the operation
-        """
+        """Log an action to the pipeline history for the final report."""
         self._pipeline_history.append({
             "tool": tool,
             "params": params
@@ -138,9 +113,43 @@ class GlobalStateManager:
     def get_history(self) -> List[Dict[str, Any]]:
         return self._pipeline_history
 
-    def clear_state(self):
-        """Clear all state and reset to initial values."""
-        self.initialize()
+    # =========================================================================
+    # Test Set Management (Leakage Prevention)
+    # =========================================================================
+
+    def update_test_data(self, new_test_df: pd.DataFrame):
+        """
+        Update the hidden test dataset with a transformed version.
+        
+        CRITICAL SAFETY CHECKS:
+        1. Must preserve row count.
+        2. Must match the schema of the CURRENT training data (columns, order).
+        """
+        if not self._is_split:
+            raise ValueError("Values cannot be updated: Dataset is not split.")
+            
+        if self._current_df is None:
+             raise ValueError("Training data is missing. Cannot validate schema.")
+
+        # 1. Schema Consistency Check
+        train_cols = list(self._current_df.columns)
+        test_cols = list(new_test_df.columns)
+        
+        if train_cols != test_cols:
+            train_set = set(train_cols)
+            test_set = set(test_cols)
+            missing = train_set - test_set
+            extra = test_set - train_set
+            
+            error_msg = "Schema Mismatch! Train and Test columns must be identical."
+            if missing: error_msg += f" Missing in Test: {missing}."
+            if extra: error_msg += f" Extra in Test: {extra}."
+            if not missing and not extra: error_msg += " Column order mismatch."
+            
+            raise ValueError(error_msg)
+
+        # 3. Update State
+        self._test_df = new_test_df.copy()
 
     # =========================================================================
     # Transformer Persistence & Versioning
@@ -161,18 +170,8 @@ class GlobalStateManager:
                 return name
             version += 1
 
-    def save_transformer(self, base_name: str, transformer: Any, columns_in: List[str] = None) -> str:
-        """
-        Save a fitted transformer with a unique versioned name.
-        
-        Args:
-            base_name: Base name for the transformer (e.g., 'pca', 'scaler')
-            transformer: The fitted model/transformer object
-            columns_in: Optional list of input column names the transformer expects
-            
-        Returns:
-            The unique name assigned to the saved transformer (e.g., 'pca_v1')
-        """
+    def save_transformer(self, base_name: str, transformer: Any, columns_in: Optional[List[str]] = None) -> str:
+        """Save an ML transformer (like PCA or StandardScaler) for later use."""
         if not hasattr(self, "_transformers"):
             self._transformers = {}
             
@@ -189,7 +188,7 @@ class GlobalStateManager:
         return unique_name
 
     def get_transformer(self, name: str) -> Optional[Any]:
-        """Retrieve a stored transformer by its unique name."""
+        """Retrieve a saved ML transformer."""
         if not hasattr(self, "_transformers") or name not in self._transformers:
             return None
         return self._transformers[name]["model"]
@@ -200,52 +199,6 @@ class GlobalStateManager:
             return {}
         return {k: type(v["model"]).__name__ for k, v in self._transformers.items()}
 
-    # =========================================================================
-    # Test Set Management (Leakage Prevention)
-    # =========================================================================
-
-    def is_split(self) -> bool:
-        """Check if dataset is currently split."""
-        return self._is_split
-
-    def update_test_data(self, new_test_df: pd.DataFrame):
-        """
-        Update the hidden test dataset with a transformed version.
-        
-        CRITICAL SAFETY CHECKS:
-        1. Must preserve row count (unless explicit removal, though usually transforms don't drop test rows)
-        2. Must match the schema of the CURRENT training data (columns, order, dtypes)
-        
-        Args:
-            new_test_df: The transformed test DataFrame
-        """
-        if not self._is_split:
-            raise ValueError("Values cannot be updated: Dataset is not split.")
-            
-        if self._current_df is None:
-             raise ValueError("Training data is missing. Cannot validate schema.")
-
-        # 1. Schema Consistency Check
-        train_cols = list(self._current_df.columns)
-        test_cols = list(new_test_df.columns)
-        
-        if train_cols != test_cols:
-            # Check for set difference to give better error message
-            train_set = set(train_cols)
-            test_set = set(test_cols)
-            missing = train_set - test_set
-            extra = test_set - train_set
-            
-            error_msg = "Schema Mismatch! Train and Test columns must be identical."
-            if missing: error_msg += f" Missing in Test: {missing}."
-            if extra: error_msg += f" Extra in Test: {extra}."
-            if not missing and not extra: error_msg += " Column order mismatch."
-            
-            raise ValueError(error_msg)
-
-        # 2. Dtype Consistency Warning (Strict enforcement might be too brittle for some pandas edge cases, but we verify)
-        # We won't raise error yet but we'll log if they differ significantly
-        # (e.g. float vs object)
-        
-        # 3. Update State
-        self._test_df = new_test_df.copy()
+    def clear_state(self):
+        """Completely reset the state manager."""
+        self.initialize()
