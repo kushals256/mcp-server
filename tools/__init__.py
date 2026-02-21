@@ -15,6 +15,7 @@ from .eda import describe_dataset, correlation_analysis
 from .data_quality import detect_data_quality_issues
 from .remove_outliers import remove_outliers
 from .cast_column_type import cast_column_type
+from .drop_columns import drop_columns
 from .encode_categorical import encode_categorical_feature
 from .normalize_categorical import normalize_categorical_text
 from .harmonize_categorical import harmonize_categorical_values
@@ -35,6 +36,7 @@ __all__ = [
     # Phase 4: Transformation
     "remove_outliers",
     "cast_column_type",
+    "drop_columns",
     "encode_categorical_feature",
     # Phase 4.5: Normalization
     "normalize_categorical_text",
