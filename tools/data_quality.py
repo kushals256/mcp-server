@@ -2,7 +2,8 @@
 Data Quality Detection Tools for MCP Server.
 
 This module provides automated detection of data quality issues including
-missing values, outliers, high cardinality columns, and duplicate rows.
+missing values, outliers, high cardinality columns, duplicate rows,
+and zero/near-zero variance columns.
 It implements Phase 3 (Analysis) of the dataset analysis workflow.
 
 Functions:
@@ -43,6 +44,8 @@ def detect_data_quality_issues(dataset_name: str) -> Dict[str, Any]:
     - Outliers (using adaptive method selection based on distribution)
     - High cardinality columns
     - Duplicate rows
+    - Zero-variance columns (constant value, no predictive signal)
+    - Near-zero-variance columns (>99% dominant value)
     
     Args:
         dataset_name: Name of the dataset file (e.g., 'data.csv').
@@ -205,7 +208,79 @@ def detect_data_quality_issues(dataset_name: str) -> Dict[str, Any]:
                 "duplicate_percentage": round((duplicate_count / total_rows) * 100, 2)
             }
         })
-    
+    # 5. DETECT ZERO / NEAR-ZERO VARIANCE COLUMNS
+    for col in df.columns:
+        n_unique = df[col].nunique(dropna=True)
+        non_null_count = df[col].notna().sum()
+
+        if non_null_count == 0:
+            # Entirely null column — already caught by missing values check
+            continue
+
+        if n_unique <= 1:
+            # Zero variance: constant column (or all-null which is caught above)
+            constant_value = df[col].dropna().iloc[0] if non_null_count > 0 else None
+            issues.append({
+                "type": "zero_variance",
+                "column": col,
+                "severity": "high",
+                "method": "Unique_count",
+                "parameters": {
+                    "unique_values": n_unique,
+                    "constant_value": str(constant_value),
+                    "non_null_count": int(non_null_count),
+                    "total_rows": total_rows,
+                    "recommendation": (
+                        "Column has zero variance (constant value). "
+                        "Consider dropping it — it provides no predictive signal."
+                    ),
+                },
+            })
+        elif n_unique == 2 and non_null_count > 0:
+            # Check if one value dominates >99% (near-constant with two values)
+            value_counts = df[col].value_counts(dropna=True)
+            dominant_ratio = value_counts.iloc[0] / non_null_count
+            if dominant_ratio > 0.99:
+                issues.append({
+                    "type": "near_zero_variance",
+                    "column": col,
+                    "severity": "medium",
+                    "method": "Dominant_value_ratio",
+                    "parameters": {
+                        "unique_values": n_unique,
+                        "dominant_value": str(value_counts.index[0]),
+                        "dominant_ratio": round(dominant_ratio, 4),
+                        "minority_count": int(value_counts.iloc[1]) if len(value_counts) > 1 else 0,
+                        "total_rows": total_rows,
+                        "recommendation": (
+                            f"Column is near-constant ({round(dominant_ratio * 100, 1)}% "
+                            f"one value). Low predictive power — consider dropping."
+                        ),
+                    },
+                })
+        else:
+            # General near-zero-variance: check if top value dominates >99%
+            if non_null_count > 0:
+                value_counts = df[col].value_counts(dropna=True)
+                dominant_ratio = value_counts.iloc[0] / non_null_count
+                if dominant_ratio > 0.99:
+                    issues.append({
+                        "type": "near_zero_variance",
+                        "column": col,
+                        "severity": "medium",
+                        "method": "Dominant_value_ratio",
+                        "parameters": {
+                            "unique_values": n_unique,
+                            "dominant_value": str(value_counts.index[0]),
+                            "dominant_ratio": round(dominant_ratio, 4),
+                            "total_rows": total_rows,
+                            "recommendation": (
+                                f"Column is near-constant ({round(dominant_ratio * 100, 1)}% "
+                                f"one value). Low predictive power — consider dropping."
+                            ),
+                        },
+                    })
+
     return {"issues": issues}
 
 
