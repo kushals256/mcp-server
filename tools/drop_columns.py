@@ -92,7 +92,37 @@ def drop_columns(
             "remaining_rows": len(df),
         }
 
-    # Drop columns
+    # ---- Pre-drop impact analysis ----
+    warnings: List[str] = []
+    total_rows = len(df)
+
+    # 1. Detect identity columns (cardinality > 95% of row count)
+    identity_columns = []
+    for col in existing_columns:
+        col_cardinality = df[col].nunique(dropna=True)
+        if total_rows > 0 and col_cardinality / total_rows > 0.95:
+            identity_columns.append(col)
+
+    # 2. Estimate new duplicates after drop
+    remaining_cols = [c for c in df.columns if c not in existing_columns]
+    current_duplicates = int(df.duplicated(keep=False).sum())
+    projected_duplicates = int(df.duplicated(subset=remaining_cols, keep=False).sum())
+    new_duplicates = projected_duplicates - current_duplicates
+
+    if new_duplicates > 0:
+        msg = (
+            f"Dropping {existing_columns} will create ~{new_duplicates} "
+            f"new duplicate rows ({projected_duplicates} total duplicates "
+            f"after drop vs {current_duplicates} before)."
+        )
+        if identity_columns:
+            msg += (
+                f" Columns {identity_columns} appear to be unique identifiers "
+                f"(cardinality > 95% of rows)."
+            )
+        warnings.append(msg)
+
+    # ---- Drop columns ----
     df_out = df.drop(columns=existing_columns)
 
     # Update global state (preserve split if active)
@@ -101,12 +131,19 @@ def drop_columns(
         "columns_dropped": existing_columns,
         "columns_not_found": missing_columns if missing_columns else None,
         "errors_mode": errors,
+        "new_duplicates_created": new_duplicates if new_duplicates > 0 else None,
+        "identity_columns_dropped": identity_columns if identity_columns else None,
     })
 
-    return {
+    result: Dict[str, Any] = {
         "columns_dropped": existing_columns,
         "columns_not_found": missing_columns if missing_columns else None,
         "remaining_columns": list(df_out.columns),
         "remaining_column_count": len(df_out.columns),
         "remaining_rows": len(df_out),
     }
+
+    if warnings:
+        result["warnings"] = warnings
+
+    return result
