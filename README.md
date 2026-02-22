@@ -1,236 +1,322 @@
-# Dataset Analysis MCP Server
+<p align="center">
+  <h1 align="center">🧙‍♂️ Dataset Analysis MCP Server</h1>
+  <p align="center">
+    <strong>A stateful Model Context Protocol server that turns LLMs into data scientists.</strong>
+  </p>
+  <p align="center">
+    <img src="https://img.shields.io/badge/python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+    <img src="https://img.shields.io/badge/MCP-1.26+-00C7B7?style=for-the-badge" />
+    <img src="https://img.shields.io/badge/tools-22-blueviolet?style=for-the-badge" />
+    <img src="https://img.shields.io/badge/tests-18_suites-success?style=for-the-badge" />
+  </p>
+</p>
 
-A powerful Model Context Protocol (MCP) server for comprehensive dataset analysis. This server implements a stateful workflow for loading, analyzing, transforming, normalizing, encoding, and saving datasets.
+---
 
-## Features
+Load a CSV. Ask your LLM to clean it, find outliers, normalize categories, encode features, split for ML, and export a reproducible pipeline config — all through natural language.
 
-✨ **Dataset Discovery** — List and load CSV/JSON datasets with automatic metadata extraction  
-📊 **Exploratory Data Analysis** — Statistical summaries and correlation analysis (Pearson, Spearman, Kendall)  
-🔍 **Data Quality Detection** — Missing values, outliers, duplicates, and high cardinality detection  
-🧹 **Data Cleaning** — Remove outliers (Z-score, IQR), cast column types  
-🧠 **Categorical Normalization** — 4-layer pipeline: surface cleanup → synonym mapping → fuzzy clustering → ML prep  
-🏷️ **Categorical Encoding** — 8 methods from one-hot to target/leave-one-out encoding  
-⚙️ **Feature Engineering** — Create derived features from expressions  
-✂️ **Train/Test Split** — Stratified splitting with immutability guarantees  
-🛡️ **Validation & Safety** — Dry-run mode to estimate memory impact before operations  
-💾 **Persistence** — Save processed datasets and export reproducible pipeline configs  
-🔄 **Stateful Architecture** — Maintains dataset context across multiple tool calls
+The server maintains **in-memory state** across tool calls, so the LLM doesn't need to pass DataFrames back and forth. Just talk to your data.
 
-## Getting Started
+---
 
-### Prerequisites
+## ⚡ Quick Start
 
-- Python 3.10 or higher
-- `uv` (recommended) or `pip`
+```bash
+# Clone & setup
+git clone <repository_url> && cd mcp-server
+uv sync  # or: pip install -r requirements.txt
 
-### Installation
+# Run
+source .venv/bin/activate
+python main.py
+```
 
-1. **Clone the repository**:
-   ```bash
-   git clone <repository_url>
-   cd mcp-server
-   ```
+### Claude Desktop Config
 
-2. **Set up the environment**:
-   
-   Using `uv` (recommended):
-   ```bash
-   uv sync
-   ```
-   
-   Using `pip`:
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements.txt
-   ```
+```json
+{
+  "mcpServers": {
+    "dataset-analysis": {
+      "command": "/path/to/.venv/bin/python",
+      "args": ["/path/to/mcp-server/main.py"]
+    }
+  }
+}
+```
 
-3. **Run the Server**:
-   ```bash
-   source .venv/bin/activate
-   python main.py
-   ```
+---
 
-## Project Structure
+## 🏗️ Architecture
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                        LLM (Claude, etc.)                        │
+└─────────────────────────────┬────────────────────────────────────┘
+                              │ MCP Protocol
+┌─────────────────────────────▼────────────────────────────────────┐
+│                      FastMCP Server (main.py)                    │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │              GlobalStateManager (Singleton)                 │ │
+│  │  ┌──────────┐  ┌───────────┐  ┌──────────┐  ┌────────────┐  │ │
+│  │  │ DataFrame│  │ Test Set  │  │ Pipeline │  │Transformers│  │ │
+│  │  │ (active) │  │ (hidden)  │  │ History  │  │ (fitted)   │  │ │
+│  │  └──────────┘  └───────────┘  └──────────┘  └────────────┘  │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  Phase 1        Phase 3         Phase 4          Phase 4.5       │
+│  ┌─────────┐   ┌───────────┐   ┌────────────┐   ┌───────────┐    │
+│  │Discovery│──▶│ Analysis  │──▶│  Transform │──▶│ Normalize │    │
+│  └─────────┘   └───────────┘   └────────────┘   └─────┬─────┘    │
+│                                                       │          │
+│  Phase 5         Phase 6         Phase 2              │          │
+│  ┌──────────┐   ┌───────────┐   ┌────────────┐        │          │
+│  │ Feature  │◀──│ Validate  │   │  Persist   │◀───────┘          │
+│  │  Eng.    │   │  (Dry-run)│   │  (Save)    │                   │
+│  └──────────┘   └───────────┘   └────────────┘                   │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🛠️ All 22 Tools
+
+### Phase 1 — Discovery
+
+| Tool | Description |
+|:-----|:------------|
+| `list_datasets` | Scan `data/` for CSV & JSON files |
+| `load_dataset_metadata` | Load a file into memory + return metadata |
+| `peek_dataset_metadata` | Read-only inspection — **no state mutation** |
+
+### Phase 2 — Persistence
+
+| Tool | Description |
+|:-----|:------------|
+| `save_processed_dataset` | Save to CSV / JSON / Parquet (train or test split) |
+| `export_pipeline_config` | Export all operations as reproducible JSON / YAML |
+| `generate_preprocessing_report` | Generate a summary report of all transformations |
+
+### Phase 3 — Analysis
+
+| Tool | Description |
+|:-----|:------------|
+| `describe_dataset` | Statistical summary (mean, std, quantiles, value counts) |
+| `correlation_analysis` | Pearson · Spearman · Kendall · Cramér's V · Eta |
+| `detect_data_quality_issues` | Missing values · outliers · duplicates · high cardinality · **zero-variance** |
+
+### Phase 4 — Transformation
+
+| Tool | Description |
+|:-----|:------------|
+| `drop_duplicate_rows` | Remove exact-match duplicate rows |
+| `handle_missing_values` | Impute or drop missing values (multiple strategies) |
+| `remove_outliers` | Z-score · IQR · Modified Z · Isolation Forest · LOF |
+| `cast_column_type` | Cast columns to int, float, str, bool, datetime, category |
+| `drop_columns` | Drop columns with **duplicate-creation warnings** for identity columns |
+| `encode_categorical_feature` | 8 methods: one-hot · label · ordinal · frequency · target · binary · hashing · leave-one-out |
+| `train_test_split` | Stratified splitting with immutability guarantees |
+
+### Phase 4.5 — Categorical Normalization Pipeline
+
+A 4-layer pipeline that runs **before encoding** to clean messy categorical data:
+
+```
+  ① normalize_categorical_text        surface cleanup (unicode, accents, casing)
+              ↓
+  ② harmonize_categorical_values      synonym → canonical mapping (FlashText)
+              ↓
+  ③ cluster_similar_categories        fuzzy typo clustering (RapidFuzz)
+              ↓
+  ④ ml_prepare_categorical            ML-aware dedup / GapEncoder (skrub)
+```
+
+| Layer | Tool | Engine |
+|:-----:|:-----|:-------|
+| 1 | `normalize_categorical_text` | `unicodedata` · `clean-text` · `text-unidecode` |
+| 2 | `harmonize_categorical_values` | `flashtext` (Aho-Corasick) |
+| 3 | `cluster_similar_categories` | `rapidfuzz` |
+| 4 | `ml_prepare_categorical` | `skrub` (lazy-loaded) |
+
+### Phase 5 — Feature Engineering
+
+| Tool | Description |
+|:-----|:------------|
+| `create_feature` | Create derived columns from Python/pandas expressions |
+
+### Phase 6 — Validation & Safety
+
+| Tool | Description |
+|:-----|:------------|
+| `validate_action` | Dry-run any tool — get memory estimates and risk flags before executing |
+
+---
+
+## 🔒 Safety Features
+
+| Feature | How |
+|:--------|:----|
+| **Dry-run validation** | `validate_action` estimates memory, flags leakage risk, blocks unsafe cardinality |
+| **Source file protection** | `save_processed_dataset` blocks overwriting the loaded source file |
+| **Identity column warnings** | `drop_columns` warns when dropping ID columns would create duplicates |
+| **Split immutability** | `train_test_split` prevents re-splitting; test set is hidden from training operations |
+| **Cardinality guards** | One-hot encoding blocked at >100 unique values, warned at >20 |
+| **Zero-variance detection** | `detect_data_quality_issues` flags constant and near-constant columns |
+| **NaN preservation** | All encoders explicitly preserve NaN rows through transformations |
+
+---
+
+## 📂 Project Structure
 
 ```
 mcp-server/
-├── config.py                          # Centralized configuration and constants
-├── main.py                            # Server entry point and tool registration
-├── tools/                             # MCP tool implementations
-│   ├── __init__.py                    # Package exports
-│   ├── discovery.py                   # Phase 1: Dataset listing and loading
-│   ├── save_dataset.py                # Phase 2: Saving data and pipeline configs
-│   ├── eda.py                         # Phase 3: EDA and statistical analysis
-│   ├── data_quality.py                # Phase 3: Quality issue detection
-│   ├── remove_outliers.py             # Phase 4: Outlier removal
-│   ├── cast_column_type.py            # Phase 4: Column type casting
-│   ├── normalize_categorical.py       # Phase 4.5: Surface text normalization
-│   ├── harmonize_categorical.py       # Phase 4.5: Synonym → canonical mapping
-│   ├── cluster_categorical.py         # Phase 4.5: Fuzzy string clustering
-│   ├── ml_prepare_categorical.py      # Phase 4.5: ML-aware preparation (skrub)
-│   ├── encode_categorical.py          # Phase 4: Categorical encoding (8 methods)
-│   ├── train_test_split.py            # Phase 4: Train/test splitting
-│   ├── feature_engineering.py         # Phase 5: Feature creation
-│   └── validation.py                  # Phase 6: Dry-run validation
+├── main.py                             # Server entry point — registers all 22 tools
+├── config.py                           # Centralized thresholds & constants
+├── tools/                              # Tool implementations (23 files)
+│   ├── discovery.py                    #   list, load, peek datasets
+│   ├── save_dataset.py                 #   save data + export pipeline
+│   ├── persistence.py                  #   preprocessing reports
+│   ├── eda.py                          #   describe + correlation
+│   ├── data_quality.py                 #   quality issue detection
+│   ├── cleaning.py                     #   drop duplicates
+│   ├── handle_missing_values.py        #   missing value strategies
+│   ├── remove_outliers.py              #   5 outlier removal methods
+│   ├── cast_column_type.py             #   type casting
+│   ├── drop_columns.py                 #   column dropping + warnings
+│   ├── encode_categorical.py           #   8 encoding methods
+│   ├── train_test_split.py             #   stratified splitting
+│   ├── normalize_categorical.py        #   Layer 1: surface cleanup
+│   ├── harmonize_categorical.py        #   Layer 2: synonym mapping
+│   ├── cluster_categorical.py          #   Layer 3: fuzzy clustering
+│   ├── ml_prepare_categorical.py       #   Layer 4: ML-aware prep
+│   ├── feature_engineering.py          #   expression-based features
+│   └── validation.py                   #   dry-run safety checks
 ├── utils/
-│   └── state_manager.py               # Global state management (singleton)
-├── tests/                             # Unit tests (100+ tests)
-│   ├── test_normalize_categorical.py
-│   ├── test_harmonize_categorical.py
-│   ├── test_cluster_categorical.py
-│   ├── test_ml_prepare_categorical.py
-│   ├── test_encode_categorical.py
-│   ├── test_data_quality.py
-│   ├── test_eda.py
-│   ├── test_correlation.py
-│   ├── test_remove_outliers.py
-│   ├── test_cast_column_type.py
-│   ├── test_train_test_split.py
-│   ├── test_feature_engineering.py
-│   ├── test_save_dataset.py
-│   ├── test_validation.py
-│   └── test_mcp_integration.py
-├── data/                              # Input/output datasets
-├── pyproject.toml                     # Project metadata and dependencies
-└── requirements.txt                   # Pip-compatible requirements
+│   └── state_manager.py                # GlobalStateManager singleton
+├── tests/                              # 18 test suites
+├── data/                               # Input/output datasets
+├── pyproject.toml                      # Dependencies & build config
+└── requirements.txt                    # Pip-compatible deps
 ```
 
-## Workflow
+---
 
-The server implements a multi-phase workflow:
-
-### Phase 1 — Discovery
-| Tool | Description |
-|---|---|
-| `list_datasets` | List CSV/JSON files in the data directory |
-| `load_dataset_metadata` | Load a dataset into global state with metadata |
-
-### Phase 2 — Persistence
-| Tool | Description |
-|---|---|
-| `save_processed_dataset` | Save the current dataset to CSV/JSON/Parquet |
-| `export_pipeline_config` | Export all logged operations as a reproducible config |
-
-### Phase 3 — Analysis
-| Tool | Description |
-|---|---|
-| `describe_dataset` | Statistical summary (mean, std, quantiles, etc.) |
-| `correlation_analysis` | Pearson / Spearman / Kendall correlation matrix |
-| `detect_data_quality_issues` | Detect missing values, outliers, duplicates, high cardinality |
-
-### Phase 4 — Transformation
-| Tool | Description |
-|---|---|
-| `remove_outliers` | Remove outliers using Z-score or IQR methods |
-| `cast_column_type` | Cast a column to a different dtype |
-| `encode_categorical_feature` | Encode categories (one-hot, label, ordinal, frequency, target, binary, hashing, leave-one-out) |
-| `train_test_split` | Stratified train/test split with immutability |
-
-### Phase 4.5 — Categorical Normalization
-
-A 4-layer pipeline that runs **before** encoding to clean and standardize categorical values:
-
-```
-normalize_categorical_text        (Layer 1 — surface cleanup)
-        ↓
-harmonize_categorical_values      (Layer 2 — synonym mapping)
-        ↓
-cluster_similar_categories        (Layer 3 — fuzzy grouping)
-        ↓
-ml_prepare_categorical            (Layer 4 — ML-aware, optional)
-        ↓
-encode_categorical_feature        (encoding)
-```
-
-| Tool | Library | Purpose |
-|---|---|---|
-| `normalize_categorical_text` | unicodedata, clean-text, text-unidecode | Unicode normalization, accent stripping, case folding |
-| `harmonize_categorical_values` | flashtext | Deterministic synonym → canonical mapping (substring-safe) |
-| `cluster_similar_categories` | rapidfuzz | Fuzzy typo clustering with deterministic tie-breaking |
-| `ml_prepare_categorical` | skrub (lazy-imported) | Auto-deduplication or GapEncoder for high-cardinality data |
-
-### Phase 5 — Feature Engineering
-| Tool | Description |
-|---|---|
-| `create_feature` | Create a derived column from a Python expression |
-
-### Phase 6 — Validation & Safety
-| Tool | Description |
-|---|---|
-| `validate_action` | Dry-run mode: estimate memory impact and check safety before execution |
-
-## Development Guide
-
-### Stateful Architecture
-
-The server uses a **GlobalStateManager** singleton (`utils/state_manager.py`) to maintain dataset context across tool calls, avoiding the need to pass DataFrames between client and server.
-
-### Adding a New Tool
-
-1. **Create a tool function** in `tools/`:
-   ```python
-   from utils.state_manager import GlobalStateManager
-
-   def my_tool(dataset_name: str, column: str) -> Dict[str, Any]:
-       manager = GlobalStateManager()
-       df = manager.get_data()
-       if df is None:
-           return {"error": "No dataset loaded"}
-       # ... do work ...
-       manager.load_data(df_modified, dataset_name)
-       manager.log_action("my_tool", {"column": column})
-       return {"result": "..."}
-   ```
-
-2. **Register** in `main.py`:
-   ```python
-   from tools.my_module import my_tool
-   mcp.tool()(my_tool)
-   ```
-
-3. **Add exports** in `tools/__init__.py` and validation rules in `tools/validation.py`.
-
-### Configuration
-
-All constants live in `config.py`:
-- Directory paths and server settings
-- Statistical thresholds (outlier, missing values, cardinality)
-- Encoding parameters (one-hot limits, hashing defaults)
-- Normalization parameters (fuzzy threshold, max comparisons)
-
-## Testing
+## 🧪 Testing
 
 ```bash
 # Run all tests
 python -m pytest tests/ -v
 
-# Run normalization tests only
-python -m pytest tests/test_normalize_categorical.py tests/test_harmonize_categorical.py tests/test_cluster_categorical.py tests/test_ml_prepare_categorical.py -v
-
-# Run a specific test file
+# Run a specific suite
 python -m pytest tests/test_encode_categorical.py -v
+
+# Run normalization pipeline tests
+python -m pytest tests/test_normalize_categorical.py \
+                 tests/test_harmonize_categorical.py \
+                 tests/test_cluster_categorical.py \
+                 tests/test_ml_prepare_categorical.py -v
+
+# With coverage
+python -m pytest tests/ --cov=tools --cov-report=term-missing
 ```
 
-## Troubleshooting
+---
 
-### Server won't start
-- Ensure virtual environment is activated: `source .venv/bin/activate`
-- Verify all dependencies: `uv sync` or `pip install -r requirements.txt`
-- Check Python version: `python --version` (must be 3.10+)
+## 🧑‍💻 Adding a New Tool
 
-### Dataset not found
-- Place CSV/JSON files in the `data/` directory
-- Use `list_datasets` to verify files are detected
+```python
+# 1. Create tools/my_tool.py
+from utils.state_manager import GlobalStateManager
 
-### Import errors
-- Ensure `__init__.py` files exist in `tools/` and `utils/`
-- Run from the project root directory
+def my_tool(dataset_name: str, column: str) -> dict:
+    manager = GlobalStateManager()
+    df = manager.get_data()
+    if df is None:
+        return {"error": "No dataset loaded"}
 
-## License
+    # ... transform df ...
 
-[Add your license here]
+    manager.load_data(df_modified, dataset_name, reset_split=False)
+    manager.log_action("my_tool", {"column": column})
+    return {"result": "done"}
+```
 
-## Contributing
+```python
+# 2. Register in main.py
+from tools.my_tool import my_tool
+mcp.tool()(my_tool)
+```
 
-[Add contribution guidelines here]
+```python
+# 3. Add to validate_action (tools/validation.py)
+elif tool == "my_tool":
+    return ValidateActionResponse(allowed=True, reason="...", estimated_memory_mb=current_memory_mb)
+```
+
+---
+
+## ⚙️ Configuration
+
+All thresholds live in `config.py`:
+
+| Category | Key Constants |
+|:---------|:-------------|
+| **Outlier Detection** | `DEFAULT_ZSCORE_THRESHOLD=3.0`, `DEFAULT_IQR_MULTIPLIER=1.5` |
+| **Encoding Limits** | `ONE_HOT_MAX_CARDINALITY=20`, `ONE_HOT_BLOCK_CARDINALITY=100` |
+| **Fuzzy Matching** | `FUZZY_SCORE_THRESHOLD=85`, `FUZZY_MAX_COMPARISONS=1000` |
+| **Missing Values** | Low/Medium/High severity thresholds |
+| **Quality Detection** | Cardinality ratios, skewness/kurtosis bounds |
+
+---
+
+## 📦 Dependencies
+
+| Package | Purpose |
+|:--------|:--------|
+| `mcp` | Model Context Protocol server framework |
+| `pandas` | DataFrame operations |
+| `scikit-learn` | Outlier detection, label encoding, train/test split |
+| `category-encoders` | Target, binary, hashing, leave-one-out encoding |
+| `rapidfuzz` | Fuzzy string matching for category clustering |
+| `flashtext` | Aho-Corasick keyword replacement for synonym mapping |
+| `skrub` | ML-aware deduplication and GapEncoder |
+| `clean-text` | Unicode fixing, control char stripping |
+| `scipy` | Statistical tests for correlation analysis |
+
+---
+
+## 🛠️ Troubleshooting
+
+<details>
+<summary><strong>Server won't start</strong></summary>
+
+```bash
+source .venv/bin/activate
+python --version  # Must be 3.10+
+uv sync           # or pip install -r requirements.txt
+```
+</details>
+
+<details>
+<summary><strong>Dataset not found</strong></summary>
+
+Place CSV/JSON files in the `data/` directory, then use `list_datasets` to verify.
+</details>
+
+<details>
+<summary><strong>"Unknown tool" in validate_action</strong></summary>
+
+Ensure the tool name matches exactly — use the registered function name, not aliases.
+All 22 tools are covered in `validate_action` as of the latest version.
+</details>
+
+<details>
+<summary><strong>Import errors</strong></summary>
+
+Run from the project root. Ensure `__init__.py` exists in `tools/` and `utils/`.
+</details>
+
+---
+
+<p align="center">
+  Built with ❤️ using <a href="https://modelcontextprotocol.io">Model Context Protocol</a>
+</p>
