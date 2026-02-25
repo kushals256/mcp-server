@@ -55,10 +55,10 @@ def harmonize_categorical_values(
     manager = GlobalStateManager()
 
     if manager.get_dataset_name() != dataset_name:
-        try:
-            load_dataset_metadata(dataset_name)
-        except Exception as e:
-            return {"error": f"Failed to load dataset: {str(e)}"}
+        return {
+            "error": f"Dataset '{dataset_name}' is not currently loaded. "
+                     "Call load_dataset_metadata() explicitly to load it first."
+        }
 
     df = manager.get_data()
     if df is None:

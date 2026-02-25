@@ -9,7 +9,7 @@ class DropDuplicateRowsRequest(BaseModel):
     subset_columns: Optional[List[str]] = Field(None, description="List of columns to check for duplicates. If None, checks all columns.")
     keep: str = Field("first", description="'first', 'last', or 'none'.")
 
-def drop_duplicate_rows(request: DropDuplicateRowsRequest) -> Dict[str, int]:
+def drop_duplicate_rows(request: DropDuplicateRowsRequest) -> Dict[str, Any]:
     """
     Remove duplicate rows from the dataset.
     
@@ -18,6 +18,12 @@ def drop_duplicate_rows(request: DropDuplicateRowsRequest) -> Dict[str, int]:
     
     Args:
         request: DropDuplicateRowsRequest containing dataset_name, subset_columns, and keep strategy.
+        
+    Returns:
+        Dictionary containing:
+            - rows_removed: Number of duplicate rows removed
+            - remaining_rows: Number of rows remaining after removal
+            - error: Error message if operation failed
     """
     dataset_name = request.dataset_name
     subset_columns = request.subset_columns
@@ -26,14 +32,14 @@ def drop_duplicate_rows(request: DropDuplicateRowsRequest) -> Dict[str, int]:
     
     # 1. Ensure Data is Loaded
     if manager.get_dataset_name() != dataset_name:
-        try:
-            load_dataset_metadata(dataset_name)
-        except Exception as e:
-            raise RuntimeError(f"Failed to load dataset: {str(e)}")
+        return {
+            "error": f"Dataset '{dataset_name}' is not currently loaded. "
+                     "Call load_dataset_metadata() explicitly to load it first."
+        }
             
     df = manager.get_data()
     if df is None:
-        raise RuntimeError("Dataset loaded but DataFrame is None.")
+        return {"error": "Dataset loaded but DataFrame is None."}
 
     initial_rows = len(df)
     
@@ -70,4 +76,4 @@ def drop_duplicate_rows(request: DropDuplicateRowsRequest) -> Dict[str, int]:
         }
 
     except Exception as e:
-        raise RuntimeError(f"Error dropping duplicates: {str(e)}")
+        return {"error": f"Error dropping duplicates: {str(e)}"}

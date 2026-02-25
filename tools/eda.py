@@ -12,13 +12,12 @@ Functions:
 
 import pandas as pd
 import numpy as np
-from typing import Dict, Any, List, Union, Optional
+from typing import Dict, Any
 from scipy import stats
 from sklearn.metrics import mutual_info_score
 from pydantic import BaseModel, Field
 
 from utils.state_manager import GlobalStateManager
-from tools.discovery import load_dataset_metadata
 
 class DescribeDatasetRequest(BaseModel):
     dataset_name: str = Field(..., description="Name of the dataset file (e.g., 'data.csv').")
@@ -43,7 +42,6 @@ def describe_dataset(request: Union[DescribeDatasetRequest, str]) -> Dict[str, A
     
     manager = GlobalStateManager()
     
-    # 1. State Management: Load if needed
     if manager.get_dataset_name() != dataset_name:
         try:
             load_dataset_metadata(dataset_name)
@@ -62,7 +60,7 @@ def describe_dataset(request: Union[DescribeDatasetRequest, str]) -> Dict[str, A
         "categorical_summary": {}
     }
 
-    # 2. Numerical Analysis
+    # Numerical Analysis
     numeric_cols = df.select_dtypes(include=[np.number]).columns
     for col in numeric_cols:
         series = df[col]
@@ -92,7 +90,7 @@ def describe_dataset(request: Union[DescribeDatasetRequest, str]) -> Dict[str, A
             }
         }
 
-    # 3. Categorical Analysis
+    # Categorical Analysis
     cat_cols = df.select_dtypes(include=['object', 'category', 'bool']).columns
     for col in cat_cols:
         series = df[col].astype(str)
@@ -117,6 +115,7 @@ def describe_dataset(request: Union[DescribeDatasetRequest, str]) -> Dict[str, A
     return summary
 
 
+
 def cramers_v(x: pd.Series, y: pd.Series) -> float:
     confusion_matrix = pd.crosstab(x, y)
     if confusion_matrix.empty: return 0.0
@@ -131,6 +130,7 @@ def cramers_v(x: pd.Series, y: pd.Series) -> float:
         denom = min((kcorr-1), (rcorr-1))
         if denom <= 0: return 0.0
         return np.sqrt(phi2corr / denom)
+
 
 
 def correlation_ratio(categories: pd.Series, measurements: pd.Series) -> float:
@@ -161,11 +161,12 @@ def correlation_analysis(request: Union[CorrelationAnalysisRequest, str], method
         dataset_name = request
 
     manager = GlobalStateManager()
+
     if manager.get_dataset_name() != dataset_name:
-        try:
-            load_dataset_metadata(dataset_name)
-        except Exception as e:
-            return {"error": f"Failed to load dataset: {str(e)}"}
+        return {
+            "error": f"Dataset '{dataset_name}' is not currently loaded. "
+                     "Call load_dataset_metadata() explicitly to load it first."
+        }
             
     df = manager.get_data()
     if df is None:
@@ -178,6 +179,7 @@ def correlation_analysis(request: Union[CorrelationAnalysisRequest, str], method
         "numerical_categorical_correlations": []
     }
     
+    # Numerical vs Numerical
     num_cols = df.select_dtypes(include=[np.number]).columns
     if len(num_cols) > 1:
         corr_matrix = df[num_cols].corr(method=method)
@@ -192,6 +194,7 @@ def correlation_analysis(request: Union[CorrelationAnalysisRequest, str], method
                     "sample_size": int(sample_n), "method": method
                 })
 
+    # Categorical vs Categorical (Cramér's V & MI)
     cat_cols = [c for c in df.select_dtypes(include=['object', 'category', 'bool']).columns 
                 if df[c].nunique() < 20 and df[c].nunique() > 1]
     
@@ -210,17 +213,21 @@ def correlation_analysis(request: Union[CorrelationAnalysisRequest, str], method
                     "mutual_info": round(mi, 4)
                 })
 
+    # Numerical vs Categorical (Correlation Ratio & ANOVA)
     if len(num_cols) > 0 and len(cat_cols) > 0:
         for num_col in num_cols:
             for cat_col in cat_cols:
                 clean_df = df[[num_col, cat_col]].dropna()
                 if clean_df.empty: continue
+                
+                # Correlation Ratio (Eta)
                 eta = correlation_ratio(clean_df[cat_col], clean_df[num_col])
                 groups = [group[num_col].values for name, group in clean_df.groupby(cat_col)]
                 if len(groups) > 1:
                     f_stat, p_val = stats.f_oneway(*groups)
                 else:
-                    f_stat, p_val = 0, 1.0
+                    f_stat, p_val = 0, 1.0 # Cannot compare 1 group
+                
                 results["numerical_categorical_correlations"].append({
                     "feature_1": num_col, "feature_2": cat_col,
                     "value": round(eta, 4), "abs_value": round(abs(eta), 4),

@@ -25,7 +25,6 @@ from config import (
     DEFAULT_RANDOM_STATE
 )
 from utils.state_manager import GlobalStateManager
-from tools.discovery import load_dataset_metadata
 
 
 def remove_outliers(
@@ -76,10 +75,10 @@ def remove_outliers(
     
     # 1. Ensure dataset is loaded
     if manager.get_dataset_name() != dataset_name:
-        try:
-            load_dataset_metadata(dataset_name)
-        except Exception as e:
-            return {"error": f"Failed to load dataset: {str(e)}"}
+        return {
+            "error": f"Dataset '{dataset_name}' is not currently loaded. "
+                     "Call load_dataset_metadata() explicitly to load it first."
+        }
             
     df = manager.get_data()
     if df is None:
@@ -120,6 +119,27 @@ def remove_outliers(
 
     # 4. Outlier Logic
     
+#    Code written by Jaideep
+#     if method == "zscore":
+#         std_dev = series.std(skipna=True)
+#         mean_val = series.mean(skipna=True)
+        
+#         stats_meta["mean"] = round(mean_val, 4) if not np.isnan(mean_val) else None
+#         stats_meta["std"] = round(std_dev, 4) if not np.isnan(std_dev) else None
+        
+#         if std_dev == 0 or np.isnan(std_dev):
+#             mask = pd.Series(True, index=df.index)
+#             stats_meta["zero_variance_detected"] = True
+#         else:
+#             z_scores = (series - mean_val) / std_dev
+#             mask = (z_scores.isna()) | (abs(z_scores) <= threshold)
+#             stats_meta["lower_bound"] = round(mean_val - (threshold * std_dev), 4)
+#             stats_meta["upper_bound"] = round(mean_val + (threshold * std_dev), 4)
+        
+#     elif method == "iqr":
+#         Q1 = series.quantile(0.25, interpolation='linear')
+#         Q3 = series.quantile(0.75, interpolation='linear')
+#         IQR = Q3 - Q1
     if method in ["zscore", "iqr", "modified_zscore"]:
         # Statistical Methods (unchanged logic mostly)
         if threshold is None or threshold <= 0:
@@ -214,6 +234,7 @@ def remove_outliers(
                 # 0.5 < threshold <= 1.0 is ambiguous. Reject strict.
                 return {"error": f"Ambiguous threshold {threshold}. Use <= 0.5 for contamination or > 1.0 for auto."}
         
+#         if IQR == 0: Code written by Jaideep
         # For LOF, 'auto' is different. Default is often 0.1 logic or 'auto' in newer sklearn.
         # But LOF doesn't support 'auto' string in all versions.
         if method == "lof" and contamination == "auto":
@@ -276,6 +297,8 @@ def remove_outliers(
             # preds is aligned with valid_data.index
             # We want False (remove) where preds == -1
             
+            # mask = (series.isna()) | ((series >= lower_bound) & (series <= upper_bound)) Code written by Jaideep
+        
             # Start strict: All True (keep everything)
             mask = pd.Series(True, index=df.index)
             
@@ -290,13 +313,9 @@ def remove_outliers(
     else:
         return {"error": f"Unknown method '{method}'."}
         
-    # 5. Apply Filter & Update State (Immutability pattern)
-    # create new dataframe only after mask is fully computed
+    # 5. Apply Filter & Update State
     dataset_cleaned = df[mask].copy()
-    
-    # Important: Reset Index
     dataset_cleaned = dataset_cleaned.reset_index(drop=True)
-    
     rows_removed = initial_rows - len(dataset_cleaned)
     
     # Update global state

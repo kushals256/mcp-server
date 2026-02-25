@@ -42,7 +42,7 @@ def test_all_tools_registered():
     # Since we can't easily introspect FastMCP's internal tool registry,
     # we'll verify the imports work and functions are defined
     from tools.discovery import list_datasets, load_dataset_metadata
-    from tools.persistence import save_processed_dataset, export_pipeline_config
+    from tools.save_dataset import save_processed_dataset, export_pipeline_config
     from tools.eda import describe_dataset, correlation_analysis
     from tools.data_quality import detect_data_quality_issues
     from tools.remove_outliers import remove_outliers
