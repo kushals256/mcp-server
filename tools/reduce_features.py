@@ -109,7 +109,7 @@ def reduce_features(
             # SVD doesn't require centering, but scaler helps.
             # However SVD often used for Sparse where scaler breaks sparsity.
             # Assuming dense for now (CSV). Standard scaler is fine.
-            steps.append(('svd', TruncatedSVD(n_components=n_components, random_state=42)))
+            steps.append(('truncated_svd', TruncatedSVD(n_components=n_components, random_state=42)))
             
         pipeline = Pipeline(steps)
         
@@ -144,7 +144,7 @@ def reduce_features(
         
         # 8. Update State
         # 8. Update State
-        manager.load_data(train_reduced_df, manager.get_dataset_name(), reset_split=False)
+        manager.update_data(train_reduced_df, tool_name="reduce_features")
         if is_split:
             manager.update_test_data(test_reduced_df)
             

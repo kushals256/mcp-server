@@ -13,6 +13,9 @@ import pandas as pd
 from typing import Optional, List, Dict, Any
 import copy
 
+from config import MAX_DATASET_VERSIONS
+from utils.version_manager import VersionManager
+
 class GlobalStateManager:
     """
     Singleton class for managing the global state of the MCP server.
@@ -42,11 +45,14 @@ class GlobalStateManager:
         
         # Split state
         self._is_split: bool = False
+        
+        # Version management
+        self._version_manager = VersionManager(max_versions=MAX_DATASET_VERSIONS)
 
     def load_data(self, df: pd.DataFrame, name: str, preserve_split: bool = False, reset_split: bool = True):
         """
         Load a NEW dataframe into memory from disk.
-        Logs a 'load_data' event.
+        Logs a 'load_data' event and creates a version snapshot.
         """
         # Store a defensive COPY of the input DataFrame
         self._current_df = df.copy()
@@ -56,18 +62,38 @@ class GlobalStateManager:
         if not preserve_split and reset_split:
             self._test_df = None
             self._is_split = False
+        
+        # Auto-snapshot on load
+        self._version_manager.snapshot(
+            df=self._current_df,
+            tool="load_data",
+            params={"dataset_name": name}
+        )
             
         self.log_action("load_data", {"dataset_name": name})
 
-    def update_data(self, df: pd.DataFrame):
+    def update_data(self, df: pd.DataFrame, tool_name: str = "unknown", tool_params: Optional[Dict[str, Any]] = None):
         """
         Update the CURRENT training dataframe in memory (e.g., after cleaning).
         Does NOT log a 'load_data' event (the tool calling this should log its own action).
+        Creates a version snapshot automatically.
+        
+        Args:
+            df: The updated DataFrame.
+            tool_name: Name of the tool performing the update (for audit trail).
+            tool_params: Parameters passed to the tool (for audit trail).
         """
         self._current_df = df.copy()
+        
+        # Auto-snapshot on update
+        self._version_manager.snapshot(
+            df=self._current_df,
+            tool=tool_name,
+            params=tool_params or {}
+        )
 
     def set_split_data(self, train_df: pd.DataFrame, test_df: pd.DataFrame, metadata: Dict[str, Any]):
-        """Store split datasets (Train and Test)."""
+        """Store split datasets (Train and Test). Creates a version snapshot of the training set."""
         if self._is_split:
             raise ValueError("Dataset is already split. Please reload the dataset to start a fresh split.")
             
@@ -75,6 +101,13 @@ class GlobalStateManager:
         self._current_df = train_df.copy()
         self._test_df = test_df.copy()
         self._is_split = True
+        
+        # Auto-snapshot the training set
+        self._version_manager.snapshot(
+            df=self._current_df,
+            tool="train_test_split",
+            params=metadata
+        )
         
         self.log_action("train_test_split", metadata)
 
@@ -199,6 +232,11 @@ class GlobalStateManager:
             return {}
         return {k: type(v["model"]).__name__ for k, v in self._transformers.items()}
 
+    @property
+    def versions(self) -> VersionManager:
+        """Access the version manager for listing, diffing, and rollback."""
+        return self._version_manager
+
     def clear_state(self):
-        """Completely reset the state manager."""
+        """Completely reset the state manager, including all version history."""
         self.initialize()

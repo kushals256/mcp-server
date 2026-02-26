@@ -30,8 +30,12 @@ from tools.harmonize_categorical import harmonize_categorical_values
 from tools.cluster_categorical import cluster_similar_categories
 from tools.ml_prepare_categorical import ml_prepare_categorical
 from tools.feature_engineering import create_feature
+from tools.extract_features import extract_features
+from tools.reduce_features import reduce_features
+from tools.remove_features import remove_features
 from tools.validation import validate_action
 from tools.persistence import generate_preprocessing_report
+from tools.versioning import list_versions, rollback_version, diff_versions
 
 # ============================================================================
 # Initialize MCP Server
@@ -81,10 +85,18 @@ mcp.tool()(ml_prepare_categorical)
 
 # Register Phase 5 Tools (Feature Engineering)
 mcp.tool()(create_feature)
+mcp.tool()(extract_features)
+mcp.tool()(reduce_features)
+mcp.tool()(remove_features)
 mcp.tool()(generate_preprocessing_report)
 
 # Register Phase 6 Tools (Validation & Safety)
 mcp.tool()(validate_action)
+
+# Phase 6.5: Versioning & Audit Trail
+mcp.tool()(list_versions)
+mcp.tool()(rollback_version)
+mcp.tool()(diff_versions)
 
 if __name__ == "__main__":
     mcp.run()

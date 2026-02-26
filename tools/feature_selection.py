@@ -51,7 +51,7 @@ def drop_columns(dataset_name: str, columns: List[str]) -> Dict[str, Any]:
             pass
 
         # 5. Update Global State
-        manager.load_data(df_new, dataset_name)
+        manager.update_data(df_new, tool_name="select_features")
         manager.log_action("drop_columns", {
             "columns": existing_cols_to_drop,
             "save_to_disk": True

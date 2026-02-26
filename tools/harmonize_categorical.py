@@ -136,7 +136,7 @@ def harmonize_categorical_values(
         })
 
     # ---- Update state ----
-    manager.load_data(df_out, dataset_name)
+    manager.update_data(df_out, tool_name="harmonize_categorical_values")
     manager.log_action("harmonize_categorical_values", {
         "column": column,
         "canonical_count": len(synonym_map),

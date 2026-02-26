@@ -38,7 +38,7 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
             estimated_memory_mb=0.0
         )
         # Log failed validation
-        manager.log_action("validate_operation", {
+        manager.log_action("validate_action", {
             "target_tool": request.tool,
             "allowed": False,
             "reason": response.reason
@@ -53,12 +53,11 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
     if df is not None:
         current_memory_mb = df.memory_usage(deep=True).sum() / (1024 * 1024)
     
-    response = None
 
     # Validation logic per tool
     if tool in ("load_dataset_metadata", "peek_dataset_metadata"):
         estimated_memory_mb = 10.0 if tool == "load_dataset_metadata" else 0.0
-        response = ValidateActionResponse(
+        return ValidateActionResponse(
             allowed=True,
             reason=f"{tool} is safe" + (" (read-only, no state change)" if tool == "peek_dataset_metadata" else ""),
             estimated_memory_mb=estimated_memory_mb
@@ -74,7 +73,7 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
     elif tool == "drop_columns":
         columns = params.get("columns", [])
         if not columns:
-            response = ValidateActionResponse(
+            return ValidateActionResponse(
                 allowed=False,
                 reason="No columns specified for dropping",
                 estimated_memory_mb=current_memory_mb
@@ -83,7 +82,7 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
             # Check if columns exist
             missing_cols = [col for col in columns if col not in df.columns]
             if missing_cols:
-                response = ValidateActionResponse(
+                return ValidateActionResponse(
                     allowed=False,
                     reason=f"Columns not found: {missing_cols}",
                     estimated_memory_mb=current_memory_mb
@@ -91,7 +90,7 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
             else:
                 remaining_cols = [col for col in df.columns if col not in columns]
                 estimated_memory_mb = df[remaining_cols].memory_usage(deep=True).sum() / (1024 * 1024)
-                response = ValidateActionResponse(
+                return ValidateActionResponse(
                     allowed=True,
                     reason=f"Dropping {len(columns)} column(s) is safe",
                     estimated_memory_mb=estimated_memory_mb
@@ -102,33 +101,33 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
         method = params.get("method")
         
         if not column:
-            response = ValidateActionResponse(
+            return ValidateActionResponse(
                 allowed=False,
                 reason="No column specified for outlier removal",
                 estimated_memory_mb=current_memory_mb
             )
         elif column not in df.columns:
-            response = ValidateActionResponse(
+            return ValidateActionResponse(
                 allowed=False,
                 reason=f"Column '{column}' not found in dataset",
                 estimated_memory_mb=current_memory_mb
             )
         elif not pd.api.types.is_numeric_dtype(df[column]):
-            response = ValidateActionResponse(
+            return ValidateActionResponse(
                 allowed=False,
                 reason=f"Column '{column}' is not numeric",
                 estimated_memory_mb=current_memory_mb
             )
-        
-        # Estimate memory (typically removes 1-5% of rows)
-        estimated_rows_removed = int(len(df) * 0.03)  # Conservative 3% estimate
-        estimated_memory_mb = current_memory_mb * (1 - 0.03)
-        
-        return ValidateActionResponse(
-            allowed=True,
-            reason=f"Outlier removal on '{column}' using {method} is safe",
-            estimated_memory_mb=estimated_memory_mb
-        )
+        else:
+            # Estimate memory (typically removes 1-5% of rows)
+            estimated_rows_removed = int(len(df) * 0.03)  # Conservative 3% estimate
+            estimated_memory_mb = current_memory_mb * (1 - 0.03)
+            
+            return ValidateActionResponse(
+                allowed=True,
+                reason=f"Outlier removal on '{column}' using {method} is safe",
+                estimated_memory_mb=estimated_memory_mb
+            )
     
     elif tool == "handle_missing_values":
         column = params.get("column")
@@ -452,6 +451,28 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
             allowed=True,
             reason=reason,
             estimated_memory_mb=estimated_memory_mb
+        )
+
+    elif tool in ["list_versions", "diff_versions"]:
+        # Read-only versioning operations
+        return ValidateActionResponse(
+            allowed=True,
+            reason=f"{tool} is a read-only operation",
+            estimated_memory_mb=current_memory_mb
+        )
+
+    elif tool == "rollback_version":
+        version = params.get("version")
+        if version is None:
+            return ValidateActionResponse(
+                allowed=False,
+                reason="No version specified for rollback",
+                estimated_memory_mb=current_memory_mb
+            )
+        return ValidateActionResponse(
+            allowed=True,
+            reason=f"Rolling back to version {version} is safe (creates a new version entry)",
+            estimated_memory_mb=current_memory_mb
         )
 
     else:

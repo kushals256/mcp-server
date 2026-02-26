@@ -12,7 +12,7 @@ Functions:
 
 import pandas as pd
 import numpy as np
-from typing import Dict, Any
+from typing import Dict, Any, Union
 from scipy import stats
 from sklearn.metrics import mutual_info_score
 from pydantic import BaseModel, Field

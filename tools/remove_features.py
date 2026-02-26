@@ -286,7 +286,7 @@ def remove_features(
     
     # 6. Final State Update
     # 6. Final State Update
-    manager.load_data(train_df, manager.get_dataset_name(), reset_split=False)
+    manager.update_data(train_df, tool_name="remove_low_info_features")
     if is_split:
         manager.update_test_data(test_df)
         

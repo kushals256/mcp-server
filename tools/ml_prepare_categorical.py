@@ -144,7 +144,7 @@ def _deduplicate(
             "after": str(df[column][idx]),
         })
 
-    manager.load_data(df, dataset_name)
+    manager.update_data(df, tool_name="ml_prepare_categorical")
     manager.log_action("ml_prepare_categorical", {
         "column": column,
         "method": "deduplicate",
@@ -207,7 +207,7 @@ def _gap_encode(
 
     unique_after = unique_before  # structural transform, cardinality preserved semantically
 
-    manager.load_data(df, dataset_name)
+    manager.update_data(df, tool_name="ml_prepare_categorical")
     manager.log_action("ml_prepare_categorical", {
         "column": column,
         "method": "gap_encoder",

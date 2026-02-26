@@ -178,7 +178,7 @@ def extract_features(
         
     # Update State
     # Update State
-    manager.load_data(train_df, manager.get_dataset_name(), preserve_split=True)
+    manager.update_data(train_df, tool_name="extract_text_features")
     if is_split:
         manager.update_test_data(test_df)
         

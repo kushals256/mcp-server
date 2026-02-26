@@ -256,7 +256,7 @@ def handle_missing_values(request: HandleMissingValuesRequest) -> Dict[str, Any]
                 test_transformed[request.column] = test_imputed[request.column]
                 
                 # Update state with both transformed datasets
-                manager.load_data(train_transformed, request.dataset_name, reset_split=False)
+                manager.update_data(train_transformed, tool_name="handle_missing_values")
                 manager.update_test_data(test_transformed)
                 
                 total_affected = train_affected + test_affected
@@ -286,7 +286,7 @@ def handle_missing_values(request: HandleMissingValuesRequest) -> Dict[str, Any]
                 )
                 
                 # Update state
-                manager.load_data(df_transformed, request.dataset_name)
+                manager.update_data(df_transformed, tool_name="handle_missing_values")
                 
                 # Get numeric columns count for stats
                 numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
@@ -362,7 +362,7 @@ def handle_missing_values(request: HandleMissingValuesRequest) -> Dict[str, Any]
                 test_transformed[request.column] = test_imputed[request.column]
                 
                 # Update state with both transformed datasets
-                manager.load_data(train_transformed, request.dataset_name, reset_split=False)
+                manager.update_data(train_transformed, tool_name="handle_missing_values")
                 manager.update_test_data(test_transformed)
                 
                 total_affected = train_affected + test_affected
@@ -394,7 +394,7 @@ def handle_missing_values(request: HandleMissingValuesRequest) -> Dict[str, Any]
                 )
                 
                 # Update state
-                manager.load_data(df_transformed, request.dataset_name)
+                manager.update_data(df_transformed, tool_name="handle_missing_values")
                 
                 # Get numeric columns count for stats
                 numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
@@ -442,7 +442,7 @@ def handle_missing_values(request: HandleMissingValuesRequest) -> Dict[str, Any]
             )
             
             # Update state with both transformed datasets
-            manager.load_data(train_transformed, request.dataset_name, reset_split=False)
+            manager.update_data(train_transformed, tool_name="handle_missing_values")
             manager.update_test_data(test_transformed)
             
             total_affected = train_affected + test_affected
@@ -469,7 +469,7 @@ def handle_missing_values(request: HandleMissingValuesRequest) -> Dict[str, Any]
             )
             
             # Update state
-            manager.load_data(df_transformed, request.dataset_name)
+            manager.update_data(df_transformed, tool_name="handle_missing_values")
             
             # Return statistics
             return {
@@ -508,7 +508,7 @@ def handle_missing_values(request: HandleMissingValuesRequest) -> Dict[str, Any]
             )
             
             # Update state with both transformed datasets
-            manager.load_data(train_transformed, request.dataset_name, reset_split=False)
+            manager.update_data(train_transformed, tool_name="handle_missing_values")
             manager.update_test_data(test_transformed)
             
             total_affected = train_affected + test_affected
@@ -535,7 +535,7 @@ def handle_missing_values(request: HandleMissingValuesRequest) -> Dict[str, Any]
             )
             
             # Update state
-            manager.load_data(df_transformed, request.dataset_name)
+            manager.update_data(df_transformed, tool_name="handle_missing_values")
             
             # Return statistics
             return {
@@ -575,7 +575,7 @@ def handle_missing_values(request: HandleMissingValuesRequest) -> Dict[str, Any]
                 )
                 
                 # Update state with both transformed datasets
-                manager.load_data(train_transformed, request.dataset_name, reset_split=False)
+                manager.update_data(train_transformed, tool_name="handle_missing_values")
                 manager.update_test_data(test_transformed)
                 
                 total_affected = train_affected + test_affected
@@ -602,7 +602,7 @@ def handle_missing_values(request: HandleMissingValuesRequest) -> Dict[str, Any]
                 )
                 
                 # Update state
-                manager.load_data(df_transformed, request.dataset_name)
+                manager.update_data(df_transformed, tool_name="handle_missing_values")
                 
                 # Return statistics
                 return {
@@ -649,7 +649,7 @@ def handle_missing_values(request: HandleMissingValuesRequest) -> Dict[str, Any]
                 )
                 
                 # Update state with both transformed datasets
-                manager.load_data(train_transformed, request.dataset_name, reset_split=False)
+                manager.update_data(train_transformed, tool_name="handle_missing_values")
                 manager.update_test_data(test_transformed)
                 
                 total_affected = train_affected + test_affected
@@ -678,7 +678,7 @@ def handle_missing_values(request: HandleMissingValuesRequest) -> Dict[str, Any]
                 )
                 
                 # Update state
-                manager.load_data(df_transformed, request.dataset_name)
+                manager.update_data(df_transformed, tool_name="handle_missing_values")
                 
                 # Return statistics
                 return {
@@ -730,7 +730,7 @@ def handle_missing_values(request: HandleMissingValuesRequest) -> Dict[str, Any]
         df_transformed = df_transformed.reset_index(drop=True)
         
         # Update GlobalStateManager with transformed DataFrame (Requirement 4.1)
-        manager.load_data(df_transformed, request.dataset_name)
+        manager.update_data(df_transformed, tool_name="handle_missing_values")
         
         # Build output statistics
         result = {

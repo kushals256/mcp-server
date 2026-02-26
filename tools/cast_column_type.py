@@ -150,14 +150,10 @@ def cast_column_type(request: CastColumnTypeRequest) -> Dict[str, Any]:
     # Update global state only if at least one column was successfully cast
     if len(columns_cast) > 0:
         # Use update_data to avoid duplicate 'load_data' log entries
-        # If your state manager doesn't have update_data yet, use load_data but be aware of the extra log
-        if hasattr(manager, 'update_data'):
-            manager.update_data(df_cast)
-        else:
-            manager.load_data(df_cast, dataset_name)
+        manager.update_data(df_cast, tool_name="cast_column_type")
             
         # LOG ACTION HERE
-        manager.log_action("change_column_types", {
+        manager.log_action("cast_column_type", {
             "dataset_name": dataset_name,
             "columns": columns_cast,
             "errors_count": len(errors)

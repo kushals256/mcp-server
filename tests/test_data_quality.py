@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import json
-from tools.data_quality import detect_data_quality_issues, DetectDataQualityIssuesRequest
+from tools.data_quality import detect_data_quality_issues
 
 
 def test_detect_data_quality_issues():
@@ -72,7 +72,7 @@ def test_detect_data_quality_issues():
     # Run the detection
     print("Running detect_data_quality_issues...")
     print("-" * 80)
-    result = detect_data_quality_issues(DetectDataQualityIssuesRequest(dataset_name=test_file))
+    result = detect_data_quality_issues(test_file)
     
     if "error" in result:
         print(f"❌ FAILED: {result['error']}")
@@ -204,7 +204,7 @@ def test_borderline_distribution():
     test_file = "test_borderline.csv"
     df.to_csv(f"data/{test_file}", index=False)
     
-    result = detect_data_quality_issues(DetectDataQualityIssuesRequest(dataset_name=test_file))
+    result = detect_data_quality_issues(test_file)
     
     if "error" in result:
         print(f"❌ FAILED: {result['error']}")

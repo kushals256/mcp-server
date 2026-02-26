@@ -319,11 +319,10 @@ def remove_outliers(
     rows_removed = initial_rows - len(dataset_cleaned)
     
     # Update global state
-    if hasattr(manager, 'load_data'):
-        manager.load_data(dataset_cleaned, dataset_name, preserve_split=True)
+    manager.update_data(dataset_cleaned, tool_name="remove_outliers")
     
     # LOG THE ACTION FOR REPORT GENERATION
-    manager.log_action("remove_data_outliers", {
+    manager.log_action("remove_outliers", {
         "dataset_name": dataset_name,
         "column": column,
         "method": method,
