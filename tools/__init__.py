@@ -21,6 +21,7 @@ from .normalize_categorical import normalize_categorical_text
 from .harmonize_categorical import harmonize_categorical_values
 from .cluster_categorical import cluster_similar_categories
 from .ml_prepare_categorical import ml_prepare_categorical
+from .versioning import list_versions, rollback_version, diff_versions
 
 __all__ = [
     # Phase 1: Discovery
@@ -43,5 +44,9 @@ __all__ = [
     "harmonize_categorical_values",
     "cluster_similar_categories",
     "ml_prepare_categorical",
+    # Phase 6.5: Versioning & Audit Trail
+    "list_versions",
+    "rollback_version",
+    "diff_versions",
 ]
 

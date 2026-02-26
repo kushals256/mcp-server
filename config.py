@@ -163,3 +163,11 @@ FUZZY_MAX_COMPARISONS = 500
 
 # Flashtext: whether keyword matching is case-sensitive
 HARMONIZE_CASE_SENSITIVE = False
+
+# ============================================================================
+# Dataset Versioning Configuration
+# ============================================================================
+
+# Maximum number of version snapshots to keep in memory (LRU eviction)
+# Version 0 (original load) is auto-pinned and never evicted
+MAX_DATASET_VERSIONS = 10

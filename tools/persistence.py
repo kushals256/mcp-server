@@ -68,6 +68,11 @@ def generate_preprocessing_report() -> GenerateReportResponse:
         elif tool == "detect_data_quality_issues":
              description = f"Step {i}: Ran data quality check."
 
+        elif tool == "rollback":
+            target_v = params.get("rolled_back_to", "?")
+            new_v = params.get("new_version", "?")
+            description = f"Step {i}: Rolled back to version {target_v} (now version {new_v})."
+
         steps.append(description)
         
     return GenerateReportResponse(steps=steps)

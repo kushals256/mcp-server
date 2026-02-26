@@ -32,6 +32,7 @@ from tools.ml_prepare_categorical import ml_prepare_categorical
 from tools.feature_engineering import create_feature
 from tools.validation import validate_action
 from tools.persistence import generate_preprocessing_report
+from tools.versioning import list_versions, rollback_version, diff_versions
 
 # ============================================================================
 # Initialize MCP Server
@@ -85,6 +86,11 @@ mcp.tool()(generate_preprocessing_report)
 
 # Register Phase 6 Tools (Validation & Safety)
 mcp.tool()(validate_action)
+
+# Phase 6.5: Versioning & Audit Trail
+mcp.tool()(list_versions)
+mcp.tool()(rollback_version)
+mcp.tool()(diff_versions)
 
 if __name__ == "__main__":
     mcp.run()
