@@ -81,7 +81,7 @@ def create_feature(request: CreateFeatureRequest) -> Dict[str, Any]:
             return {"error": f"Expression returned unsupported type: {type(new_feature)}. Expected Series, list, array, or scalar."}
         
         # Update state
-        manager.load_data(df_copy, manager.get_dataset_name())
+        manager.update_data(df_copy, tool_name="create_feature")
         manager.log_action("create_feature", {
             "name": feature_name,
             "expression": expression

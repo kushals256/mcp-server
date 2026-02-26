@@ -6,18 +6,6 @@ import numpy as np
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Mock yaml module if not present
-# Mock optional dependencies if not present
-from unittest.mock import MagicMock
-import sys
-
-dependencies_to_mock = ["yaml", "scipy", "scipy.stats", "sklearn", "sklearn.ensemble", "sklearn.preprocessing", "matplotlib", "matplotlib.pyplot", "seaborn"]
-
-for dep in dependencies_to_mock:
-    try:
-        __import__(dep)
-    except ImportError:
-        sys.modules[dep] = MagicMock()
 
 from tools.cast_column_type import cast_column_type, CastColumnTypeRequest
 from utils.state_manager import GlobalStateManager

@@ -181,7 +181,7 @@ def cluster_similar_categories(request: ClusterCategoricalRequest) -> Dict[str, 
     unique_after = int(df_out[column].nunique(dropna=True))
 
     # ---- Update state ----
-    manager.load_data(df_out, dataset_name)
+    manager.update_data(df_out, tool_name="cluster_similar_categories")
     manager.log_action("cluster_similar_categories", {
         "column": column,
         "threshold": threshold,

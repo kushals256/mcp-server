@@ -126,7 +126,7 @@ def drop_columns(
     df_out = df.drop(columns=existing_columns)
 
     # Update global state (preserve split if active)
-    manager.load_data(df_out, dataset_name, reset_split=False)
+    manager.update_data(df_out, tool_name="drop_columns")
     manager.log_action("drop_columns", {
         "columns_dropped": existing_columns,
         "columns_not_found": missing_columns if missing_columns else None,

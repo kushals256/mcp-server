@@ -54,11 +54,8 @@ def drop_duplicate_rows(request: DropDuplicateRowsRequest) -> Dict[str, Any]:
         df_cleaned = df.drop_duplicates(subset=subset_columns, keep=keep_arg)
         
         # 3. Update State (Memory ONLY)
-        # Use update_data to avoid duplicate 'load_data' logs
-        if hasattr(manager, 'update_data'):
-            manager.update_data(df_cleaned)
-        else:
-            manager.load_data(df_cleaned, dataset_name)
+        # Update state (memory only, no disk write)
+        manager.update_data(df_cleaned, tool_name="drop_duplicate_rows")
         
         rows_dropped = initial_rows - len(df_cleaned)
         remaining_rows = len(df_cleaned)

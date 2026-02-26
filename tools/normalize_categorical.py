@@ -152,7 +152,7 @@ def normalize_categorical_text(
         })
 
     # ---- Update state ----
-    manager.load_data(df_out, dataset_name)
+    manager.update_data(df_out, tool_name="normalize_categorical_text")
     manager.log_action("normalize_categorical_text", {
         "column": column,
         "operations": operations_applied,
