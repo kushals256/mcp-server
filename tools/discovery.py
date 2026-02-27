@@ -9,16 +9,21 @@ Functions:
     list_datasets: List all CSV/JSON files in the data directory.
     load_dataset_metadata: Load a dataset into global state and return metadata.
     peek_dataset_metadata: Inspect a dataset on disk without modifying state.
+    load_dataset: Load a dataset from any path on the user's machine.
 """
 
 import os
+import logging
+from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 import pandas as pd
 from pydantic import BaseModel, Field
 
-from config import DATA_DIR
+from config import DATA_DIR, SUPPORTED_LOAD_EXTENSIONS
 from utils.state_manager import GlobalStateManager
+
+logger = logging.getLogger(__name__)
 
 
 class DatasetInfo(BaseModel):
@@ -83,12 +88,18 @@ def list_datasets() -> List[DatasetInfo]:
 def _read_dataset(path: str, filename: str) -> pd.DataFrame:
     """
     Internal helper to read a dataset from disk based on its extension.
+
+    Supports: .csv, .json, .parquet, .xlsx
     """
     if filename.endswith(".csv"):
         return pd.read_csv(path)
     if filename.endswith(".json"):
         return pd.read_json(path)
-    raise ValueError("Unsupported file format")
+    if filename.endswith(".parquet"):
+        return pd.read_parquet(path)
+    if filename.endswith(".xlsx"):
+        return pd.read_excel(path)
+    raise ValueError(f"Unsupported file format: {Path(filename).suffix}")
 
 
 def load_dataset_metadata(filename: str) -> DatasetMetadata:
@@ -229,6 +240,108 @@ def peek_dataset_metadata(filename: str) -> DatasetMetadata:
             missing_percentages_sample=missing_stats,
             estimated_row_count=len(df),
             preview=df.head(5).to_dict(orient="records"),
+        )
+
+    except Exception as e:
+        return DatasetMetadata(
+            filename=filename,
+            columns=[],
+            dtypes={},
+            missing_percentages_sample={},
+            estimated_row_count=0,
+            preview=[],
+            error=str(e)
+        )
+
+
+def load_dataset(path: str) -> DatasetMetadata:
+    """
+    Load a dataset from any absolute or relative path on the user's machine.
+
+    Unlike load_dataset_metadata (which requires files in the data/ directory),
+    this tool accepts any filesystem path. It resolves ~ home-directory
+    shorthand, environment variables, and relative paths automatically.
+
+    WARNING:
+        This OVERWRITES the current in-memory dataset in GlobalStateManager.
+        Any unsaved transformations will be lost.
+
+    Args:
+        path:
+            File path to load. Accepts:
+            - Absolute paths: /Users/me/data/sales.csv
+            - Home shorthand: ~/Downloads/sales.csv
+            - Relative paths: ../data/sales.csv (resolved from CWD)
+
+    Returns:
+        DatasetMetadata: Object containing filename, columns, dtypes,
+        missing percentages, row count, and a 5-row preview.
+        Returns DatasetMetadata with error field populated if operation fails.
+
+    Note:
+        Supported formats: .csv, .json, .parquet, .xlsx
+    """
+    # Resolve the path: expand ~ and make absolute
+    resolved = Path(path).expanduser().resolve()
+    filename = resolved.name
+
+    logger.info("load_dataset: resolved '%s' -> '%s'", path, resolved)
+
+    # Validate file existence
+    if not resolved.is_file():
+        return DatasetMetadata(
+            filename=filename,
+            columns=[],
+            dtypes={},
+            missing_percentages_sample={},
+            estimated_row_count=0,
+            preview=[],
+            error=f"File not found: {resolved}"
+        )
+
+    # Validate supported format
+    ext = resolved.suffix.lower()
+    if ext not in SUPPORTED_LOAD_EXTENSIONS:
+        return DatasetMetadata(
+            filename=filename,
+            columns=[],
+            dtypes={},
+            missing_percentages_sample={},
+            estimated_row_count=0,
+            preview=[],
+            error=(
+                f"Unsupported file format '{ext}'. "
+                f"Supported: {', '.join(sorted(SUPPORTED_LOAD_EXTENSIONS))}"
+            )
+        )
+
+    try:
+        df = _read_dataset(str(resolved), filename)
+
+        # Store in GlobalStateManager
+        manager = GlobalStateManager()
+        manager.load_data(df, filename)
+
+        missing_stats = df.isnull().mean().to_dict()
+
+        return DatasetMetadata(
+            filename=filename,
+            columns=list(df.columns),
+            dtypes={k: str(v) for k, v in df.dtypes.items()},
+            missing_percentages_sample=missing_stats,
+            estimated_row_count=len(df),
+            preview=df.head(5).to_dict(orient="records"),
+        )
+
+    except PermissionError:
+        return DatasetMetadata(
+            filename=filename,
+            columns=[],
+            dtypes={},
+            missing_percentages_sample={},
+            estimated_row_count=0,
+            preview=[],
+            error=f"Permission denied: {resolved}"
         )
 
     except Exception as e:

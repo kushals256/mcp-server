@@ -6,7 +6,7 @@
   <p align="center">
     <img src="https://img.shields.io/badge/python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
     <img src="https://img.shields.io/badge/MCP-1.26+-00C7B7?style=for-the-badge" />
-    <img src="https://img.shields.io/badge/tools-22-blueviolet?style=for-the-badge" />
+    <img src="https://img.shields.io/badge/tools-23-blueviolet?style=for-the-badge" />
     <img src="https://img.shields.io/badge/tests-18_suites-success?style=for-the-badge" />
   </p>
 </p>
@@ -85,8 +85,9 @@ python main.py
 | Tool | Description |
 |:-----|:------------|
 | `list_datasets` | Scan `data/` for CSV & JSON files |
-| `load_dataset_metadata` | Load a file into memory + return metadata |
+| `load_dataset_metadata` | Load a file from `data/` into memory + return metadata |
 | `peek_dataset_metadata` | Read-only inspection — **no state mutation** |
+| `load_dataset` | Load a dataset from **any path** on your machine (absolute, `~`, relative) |
 
 ### Phase 2 — Persistence
 
@@ -300,6 +301,7 @@ uv sync           # or pip install -r requirements.txt
 <summary><strong>Dataset not found</strong></summary>
 
 Place CSV/JSON files in the `data/` directory, then use `list_datasets` to verify.
+Alternatively, use `load_dataset("~/path/to/file.csv")` to load files from **any location** on your machine.
 </details>
 
 <details>

@@ -12,7 +12,7 @@ This package contains all MCP tool implementations organized by phase:
 - Phase 6.5 (Versioning): Version snapshots, rollback, diff
 """
 
-from .discovery import list_datasets, load_dataset_metadata, peek_dataset_metadata
+from .discovery import list_datasets, load_dataset_metadata, peek_dataset_metadata, load_dataset
 from .save_dataset import save_processed_dataset, export_pipeline_config
 from .eda import describe_dataset, correlation_analysis
 from .data_quality import detect_data_quality_issues
@@ -40,6 +40,7 @@ __all__ = [
     "list_datasets",
     "load_dataset_metadata",
     "peek_dataset_metadata",
+    "load_dataset",
     # Phase 2: Persistence
     "save_processed_dataset",
     "export_pipeline_config",
