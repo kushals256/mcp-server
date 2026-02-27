@@ -17,6 +17,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Data directory for storing input/output datasets
 DATA_DIR = os.path.join(BASE_DIR, "data")
 
+# Supported file extensions for load_dataset (global path loading)
+SUPPORTED_LOAD_EXTENSIONS = {".csv", ".json", ".parquet", ".xlsx"}
+
 # ============================================================================
 # Server Configuration
 # ============================================================================

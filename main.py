@@ -14,7 +14,7 @@ Workflow Phases:
 from mcp.server.fastmcp import FastMCP
 
 from config import SERVER_NAME
-from tools.discovery import list_datasets, load_dataset_metadata, peek_dataset_metadata
+from tools.discovery import list_datasets, load_dataset_metadata, peek_dataset_metadata, load_dataset
 from tools.save_dataset import save_processed_dataset, export_pipeline_config
 from tools.eda import describe_dataset, correlation_analysis
 from tools.data_quality import detect_data_quality_issues
@@ -53,6 +53,7 @@ mcp = FastMCP(SERVER_NAME)
 mcp.tool()(list_datasets)
 mcp.tool()(load_dataset_metadata)
 mcp.tool()(peek_dataset_metadata)
+mcp.tool()(load_dataset)
 
 # Phase 2: Persistence
 # Save processed data and export pipeline configurations

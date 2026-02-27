@@ -31,7 +31,7 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
     df = manager.get_data()
     
     # If no dataset loaded, most operations are unsafe
-    if df is None and request.tool not in ["list_datasets", "load_dataset_metadata", "peek_dataset_metadata"]:
+    if df is None and request.tool not in ["list_datasets", "load_dataset_metadata", "peek_dataset_metadata", "load_dataset"]:
         response = ValidateActionResponse(
             allowed=False,
             reason="No dataset loaded in memory. Load a dataset first.",
@@ -55,8 +55,11 @@ def validate_action(request: ValidateActionRequest) -> ValidateActionResponse:
     
 
     # Validation logic per tool
-    if tool in ("load_dataset_metadata", "peek_dataset_metadata"):
-        estimated_memory_mb = 10.0 if tool == "load_dataset_metadata" else 0.0
+    if tool in ("load_dataset_metadata", "peek_dataset_metadata", "load_dataset"):
+        if tool == "peek_dataset_metadata":
+            estimated_memory_mb = 0.0
+        else:
+            estimated_memory_mb = 10.0
         return ValidateActionResponse(
             allowed=True,
             reason=f"{tool} is safe" + (" (read-only, no state change)" if tool == "peek_dataset_metadata" else ""),
