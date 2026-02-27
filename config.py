@@ -15,7 +15,9 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Data directory for storing input/output datasets
-DATA_DIR = os.path.join(BASE_DIR, "data")
+# Priority: MCP_DATA_DIR env var → ./data/ relative to current working directory
+# This ensures tools work correctly whether running from source or installed via pip.
+DATA_DIR = os.environ.get("MCP_DATA_DIR", os.path.join(os.getcwd(), "data"))
 
 # Supported file extensions for load_dataset (global path loading)
 SUPPORTED_LOAD_EXTENSIONS = {".csv", ".json", ".parquet", ".xlsx"}
