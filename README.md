@@ -46,6 +46,39 @@ python main.py
 
 ---
 
+## 📥 Loading Datasets
+
+There are two ways to load data into the server:
+
+### Option 1: Load from anywhere (recommended)
+
+Use `load_dataset` to load files from **any location** on your machine — no copying required:
+
+```
+User: "Analyze the file at ~/Downloads/sales.csv"
+→ AI calls load_dataset("~/Downloads/sales.csv")
+```
+
+Supported path formats:
+- **Absolute**: `/Users/me/data/sales.csv`
+- **Home shorthand**: `~/Downloads/sales.csv`
+- **Relative** (from CWD): `../data/sales.csv`
+
+Supported file types: `.csv`, `.json`, `.parquet`, `.xlsx`
+
+### Option 2: Use the `data/` directory
+
+Place files in the `data/` folder and use the classic workflow:
+
+```
+1. list_datasets()           → see what's available
+2. load_dataset_metadata("sales.csv")  → load into memory
+```
+
+By default, `data/` is resolved relative to where you start the server. You can override this with the `MCP_DATA_DIR` environment variable (see [Configuration](#️-configuration)).
+
+---
+
 ## 🏗️ Architecture
 
 ```
@@ -257,6 +290,33 @@ elif tool == "my_tool":
 
 ## ⚙️ Configuration
 
+### Data Directory (`MCP_DATA_DIR`)
+
+The `data/` directory used by `list_datasets`, `load_dataset_metadata`, and `save_processed_dataset` defaults to `./data/` relative to your **current working directory**. Override it with an environment variable:
+
+**CLI:**
+```bash
+export MCP_DATA_DIR=/Users/me/my-datasets
+python main.py
+```
+
+**Claude Desktop:**
+```json
+{
+  "mcpServers": {
+    "dataset-analysis": {
+      "command": "/path/to/.venv/bin/python",
+      "args": ["/path/to/mcp-server/main.py"],
+      "env": { "MCP_DATA_DIR": "/Users/me/my-datasets" }
+    }
+  }
+}
+```
+
+> **Note:** `load_dataset` accepts full file paths directly, so it works regardless of `MCP_DATA_DIR`.
+
+### Algorithm Thresholds
+
 All thresholds live in `config.py`:
 
 | Category | Key Constants |
@@ -300,8 +360,9 @@ uv sync           # or pip install -r requirements.txt
 <details>
 <summary><strong>Dataset not found</strong></summary>
 
-Place CSV/JSON files in the `data/` directory, then use `list_datasets` to verify.
-Alternatively, use `load_dataset("~/path/to/file.csv")` to load files from **any location** on your machine.
+- **Quickest fix:** Use `load_dataset("~/path/to/your/file.csv")` to load from any location.
+- **Using `data/` folder:** Make sure you're running the server from the directory that contains `data/`, or set `MCP_DATA_DIR` to point to the right place.
+- **Verify:** Run `list_datasets()` to see what the server can find.
 </details>
 
 <details>
