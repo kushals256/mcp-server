@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from tools.remove_outliers import remove_outliers
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.remove_outliers import remove_outliers
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 # Mock the GlobalStateManager to avoid loading real files
 class MockStateManager:

@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from tools.train_test_split import train_test_split
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.train_test_split import train_test_split
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 @pytest.fixture
 def manager():

@@ -12,8 +12,8 @@ import numpy as np
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.cleaning import drop_duplicate_rows, DropDuplicateRowsRequest
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.cleaning import drop_duplicate_rows, DropDuplicateRowsRequest
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 def load_test_data(name="test_cleaning.csv"):

@@ -7,8 +7,8 @@ import numpy as np
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-from tools.cast_column_type import cast_column_type, CastColumnTypeRequest
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.cast_column_type import cast_column_type, CastColumnTypeRequest
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 def setup_test_data():
     """Create a dataframe with various mixed types for testing"""

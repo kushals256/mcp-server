@@ -16,8 +16,8 @@ from typing import Dict, Any, List, Optional, Literal
 
 import pandas as pd
 
-from utils.state_manager import GlobalStateManager
-from tools.discovery import load_dataset_metadata
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.discovery import load_dataset_metadata
 
 
 # ============================================================================

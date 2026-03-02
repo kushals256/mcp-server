@@ -11,8 +11,8 @@ import numpy as np
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.reduce_features import reduce_features
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.reduce_features import reduce_features
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 def load_numeric_data(name="test_reduce.csv", n_features=5, n_rows=50):

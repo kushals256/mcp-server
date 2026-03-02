@@ -27,14 +27,14 @@ from typing import Dict, Any, List, Optional, Literal, Tuple
 from sklearn.preprocessing import LabelEncoder
 import category_encoders as ce
 
-from config import (
+from dataset_analysis_mcp.config import (
     ONE_HOT_MAX_CARDINALITY,
     ONE_HOT_BLOCK_CARDINALITY,
     DEFAULT_HASH_N_COMPONENTS,
     DEFAULT_TARGET_SMOOTHING,
     MEMORY_RISK_THRESHOLDS,
 )
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 # ============================================================================

@@ -2,11 +2,11 @@ import pytest
 import pandas as pd
 import numpy as np
 import os
-from utils.state_manager import GlobalStateManager
-from tools.train_test_split import train_test_split
-from tools.remove_features import remove_features
-from tools.extract_features import extract_features
-from tools.reduce_features import reduce_features
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.train_test_split import train_test_split
+from dataset_analysis_mcp.tools.remove_features import remove_features
+from dataset_analysis_mcp.tools.extract_features import extract_features
+from dataset_analysis_mcp.tools.reduce_features import reduce_features
 
 @pytest.fixture
 def manager():

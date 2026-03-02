@@ -12,7 +12,7 @@ import pandas as pd
 from typing import Dict, Any, Optional
 from sklearn.model_selection import train_test_split as sklearn_split
 
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 def train_test_split(
     test_size: float,

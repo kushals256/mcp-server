@@ -16,9 +16,9 @@ from typing import Dict, Any, List
 import pandas as pd
 from flashtext import KeywordProcessor
 
-from config import HARMONIZE_CASE_SENSITIVE
-from utils.state_manager import GlobalStateManager
-from tools.discovery import load_dataset_metadata
+from dataset_analysis_mcp.config import HARMONIZE_CASE_SENSITIVE
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.discovery import load_dataset_metadata
 
 
 # ============================================================================

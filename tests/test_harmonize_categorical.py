@@ -12,8 +12,8 @@ import numpy as np
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.harmonize_categorical import harmonize_categorical_values
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.harmonize_categorical import harmonize_categorical_values
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 # ============================================================================

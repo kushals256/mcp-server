@@ -21,8 +21,8 @@ import pandas as pd
 from text_unidecode import unidecode as strip_accents
 from cleantext import clean as clean_text
 
-from utils.state_manager import GlobalStateManager
-from tools.discovery import load_dataset_metadata
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.discovery import load_dataset_metadata
 
 
 # ============================================================================

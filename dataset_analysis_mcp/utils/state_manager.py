@@ -13,8 +13,8 @@ import pandas as pd
 from typing import Optional, List, Dict, Any
 import copy
 
-from config import MAX_DATASET_VERSIONS
-from utils.version_manager import VersionManager
+from dataset_analysis_mcp.config import MAX_DATASET_VERSIONS
+from dataset_analysis_mcp.utils.version_manager import VersionManager
 
 class GlobalStateManager:
     """

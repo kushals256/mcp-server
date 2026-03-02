@@ -18,7 +18,7 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 def reduce_features(
     method: Literal["pca", "lda", "truncated_svd"],

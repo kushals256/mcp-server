@@ -12,7 +12,7 @@ import pytest
 # Ensure project root is on the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 @pytest.fixture(autouse=True)

@@ -15,7 +15,7 @@ Safety Guards:
 import pandas as pd
 import numpy as np
 from typing import Dict, Any, List, Optional, Literal
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 def extract_features(
     method: Literal["datetime", "text", "math"],

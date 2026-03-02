@@ -18,13 +18,13 @@ from typing import Dict, Any, Literal, Optional
 from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
 
-from config import (
+from dataset_analysis_mcp.config import (
     DEFAULT_ZSCORE_THRESHOLD, 
     DEFAULT_IQR_MULTIPLIER, 
     DEFAULT_MODIFIED_ZSCORE_THRESHOLD,
     DEFAULT_RANDOM_STATE
 )
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 def remove_outliers(

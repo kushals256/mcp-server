@@ -18,13 +18,13 @@ from pydantic import BaseModel, Field
 import pandas as pd
 from rapidfuzz import fuzz, process
 
-from config import (
+from dataset_analysis_mcp.config import (
     FUZZY_SCORE_THRESHOLD,
     FUZZY_MIN_GROUP_SIZE,
     FUZZY_MAX_COMPARISONS,
 )
-from utils.state_manager import GlobalStateManager
-from tools.discovery import load_dataset_metadata
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.discovery import load_dataset_metadata
 
 
 # ============================================================================

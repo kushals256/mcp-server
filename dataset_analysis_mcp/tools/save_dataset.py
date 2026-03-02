@@ -16,8 +16,8 @@ import yaml
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 
-from config import DATA_DIR, SUPPORTED_DATASET_FORMATS, SUPPORTED_PIPELINE_FORMATS
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.config import DATA_DIR, SUPPORTED_DATASET_FORMATS, SUPPORTED_PIPELINE_FORMATS
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 class SaveDatasetRequest(BaseModel):

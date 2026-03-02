@@ -13,8 +13,8 @@ import numpy as np
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.encode_categorical import encode_categorical_feature
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.encode_categorical import encode_categorical_feature
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 # ============================================================================

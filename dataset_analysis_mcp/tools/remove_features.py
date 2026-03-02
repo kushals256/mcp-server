@@ -14,7 +14,7 @@ from sklearn.feature_selection import VarianceThreshold, SelectKBest, f_classif,
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.base import clone
 
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 def remove_features(
     method: Literal["missing_threshold", "variance_threshold", "correlation_threshold", "select_k_best", "rfe", "by_name"],

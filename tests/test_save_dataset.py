@@ -5,9 +5,9 @@ import pytest
 from unittest.mock import MagicMock
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from tools.save_dataset import save_processed_dataset, SaveDatasetRequest
-from utils.state_manager import GlobalStateManager
-from tools.train_test_split import train_test_split
+from dataset_analysis_mcp.tools.save_dataset import save_processed_dataset, SaveDatasetRequest
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.train_test_split import train_test_split
 
 @pytest.fixture
 def manager():

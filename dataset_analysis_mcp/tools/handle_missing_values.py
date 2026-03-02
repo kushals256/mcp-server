@@ -25,8 +25,8 @@ from sklearn.impute import KNNImputer
 from sklearn.experimental import enable_iterative_imputer  # noqa
 from sklearn.impute import IterativeImputer
 
-from utils.state_manager import GlobalStateManager
-from tools.discovery import load_dataset_metadata
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.discovery import load_dataset_metadata
 
 
 def _convert_to_native_types(value):

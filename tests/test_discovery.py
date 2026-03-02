@@ -15,8 +15,8 @@ import numpy as np
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.discovery import list_datasets, load_dataset_metadata, peek_dataset_metadata, load_dataset
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.discovery import list_datasets, load_dataset_metadata, peek_dataset_metadata, load_dataset
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 def _create_temp_csv(tmp_dir, name="test.csv"):
@@ -29,7 +29,7 @@ def _create_temp_csv(tmp_dir, name="test.csv"):
 
 def test_list_datasets_empty(monkeypatch, tmp_path):
     """Test listing datasets in an empty directory."""
-    monkeypatch.setattr("tools.discovery.DATA_DIR", str(tmp_path))
+    monkeypatch.setattr("dataset_analysis_mcp.tools.discovery.DATA_DIR", str(tmp_path))
     result = list_datasets()
     assert len(result) == 1
     assert "No files found" in result[0].filename
@@ -37,7 +37,7 @@ def test_list_datasets_empty(monkeypatch, tmp_path):
 
 def test_list_datasets_with_files(monkeypatch, tmp_path):
     """Test listing datasets finds CSV files."""
-    monkeypatch.setattr("tools.discovery.DATA_DIR", str(tmp_path))
+    monkeypatch.setattr("dataset_analysis_mcp.tools.discovery.DATA_DIR", str(tmp_path))
     _create_temp_csv(str(tmp_path), "data1.csv")
     _create_temp_csv(str(tmp_path), "data2.csv")
     # Non-CSV file should be ignored
@@ -52,7 +52,7 @@ def test_list_datasets_with_files(monkeypatch, tmp_path):
 
 def test_load_dataset_metadata_success(monkeypatch, tmp_path):
     """Test loading a dataset into GlobalStateManager."""
-    monkeypatch.setattr("tools.discovery.DATA_DIR", str(tmp_path))
+    monkeypatch.setattr("dataset_analysis_mcp.tools.discovery.DATA_DIR", str(tmp_path))
     _create_temp_csv(str(tmp_path), "test.csv")
 
     result = load_dataset_metadata("test.csv")
@@ -73,7 +73,7 @@ def test_load_dataset_metadata_success(monkeypatch, tmp_path):
 
 def test_load_dataset_metadata_not_found(monkeypatch, tmp_path):
     """Test loading a non-existent dataset returns error."""
-    monkeypatch.setattr("tools.discovery.DATA_DIR", str(tmp_path))
+    monkeypatch.setattr("dataset_analysis_mcp.tools.discovery.DATA_DIR", str(tmp_path))
 
     result = load_dataset_metadata("nonexistent.csv")
     assert result.error is not None
@@ -82,7 +82,7 @@ def test_load_dataset_metadata_not_found(monkeypatch, tmp_path):
 
 def test_peek_dataset_metadata_no_state_change(monkeypatch, tmp_path):
     """Test that peek does NOT modify GlobalStateManager state."""
-    monkeypatch.setattr("tools.discovery.DATA_DIR", str(tmp_path))
+    monkeypatch.setattr("dataset_analysis_mcp.tools.discovery.DATA_DIR", str(tmp_path))
     _create_temp_csv(str(tmp_path), "peek_test.csv")
 
     manager = GlobalStateManager()
@@ -101,7 +101,7 @@ def test_peek_dataset_metadata_no_state_change(monkeypatch, tmp_path):
 
 def test_peek_dataset_metadata_not_found(monkeypatch, tmp_path):
     """Test peeking a non-existent file returns error."""
-    monkeypatch.setattr("tools.discovery.DATA_DIR", str(tmp_path))
+    monkeypatch.setattr("dataset_analysis_mcp.tools.discovery.DATA_DIR", str(tmp_path))
 
     result = peek_dataset_metadata("nonexistent.csv")
     assert result.error is not None

@@ -12,7 +12,7 @@ Tools:
 """
 
 from typing import Dict, Any
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 def list_versions() -> Dict[str, Any]:

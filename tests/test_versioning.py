@@ -10,8 +10,8 @@ Covers:
 import pytest
 import pandas as pd
 import numpy as np
-from utils.version_manager import VersionManager, VersionEntry
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.utils.version_manager import VersionManager, VersionEntry
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 # =============================================================================
@@ -385,13 +385,13 @@ class TestListVersionsTool:
     """Tests for the list_versions MCP tool."""
 
     def test_no_versions(self):
-        from tools.versioning import list_versions
+        from dataset_analysis_mcp.tools.versioning import list_versions
 
         result = list_versions()
         assert "No versions available" in result["message"]
 
     def test_with_versions(self, sample_df, sample_df_cleaned):
-        from tools.versioning import list_versions
+        from dataset_analysis_mcp.tools.versioning import list_versions
 
         manager = GlobalStateManager()
         manager.load_data(sample_df, "test.csv")
@@ -409,7 +409,7 @@ class TestRollbackVersionTool:
     """Tests for the rollback_version MCP tool."""
 
     def test_rollback_to_v0(self, sample_df, sample_df_cleaned):
-        from tools.versioning import rollback_version
+        from dataset_analysis_mcp.tools.versioning import rollback_version
 
         manager = GlobalStateManager()
         manager.load_data(sample_df, "test.csv")  # v0: 5 rows
@@ -425,7 +425,7 @@ class TestRollbackVersionTool:
         assert len(current) == 5
 
     def test_rollback_pins_target(self, sample_df, sample_df_cleaned):
-        from tools.versioning import rollback_version
+        from dataset_analysis_mcp.tools.versioning import rollback_version
 
         manager = GlobalStateManager()
         manager.load_data(sample_df, "test.csv")
@@ -435,7 +435,7 @@ class TestRollbackVersionTool:
         assert manager.versions.is_pinned(0)
 
     def test_rollback_invalid_version(self, sample_df):
-        from tools.versioning import rollback_version
+        from dataset_analysis_mcp.tools.versioning import rollback_version
 
         manager = GlobalStateManager()
         manager.load_data(sample_df, "test.csv")
@@ -443,13 +443,13 @@ class TestRollbackVersionTool:
         assert "error" in result
 
     def test_rollback_no_data(self):
-        from tools.versioning import rollback_version
+        from dataset_analysis_mcp.tools.versioning import rollback_version
 
         result = rollback_version(0)
         assert "error" in result
 
     def test_rollback_appears_in_history(self, sample_df, sample_df_cleaned):
-        from tools.versioning import rollback_version
+        from dataset_analysis_mcp.tools.versioning import rollback_version
 
         manager = GlobalStateManager()
         manager.load_data(sample_df, "test.csv")
@@ -465,7 +465,7 @@ class TestDiffVersionsTool:
     """Tests for the diff_versions MCP tool."""
 
     def test_basic_diff(self, sample_df, sample_df_cleaned):
-        from tools.versioning import diff_versions
+        from dataset_analysis_mcp.tools.versioning import diff_versions
 
         manager = GlobalStateManager()
         manager.load_data(sample_df, "test.csv")
@@ -478,7 +478,7 @@ class TestDiffVersionsTool:
         assert result["dataset_name"] == "test.csv"
 
     def test_diff_invalid_version(self, sample_df):
-        from tools.versioning import diff_versions
+        from dataset_analysis_mcp.tools.versioning import diff_versions
 
         manager = GlobalStateManager()
         manager.load_data(sample_df, "test.csv")
@@ -486,7 +486,7 @@ class TestDiffVersionsTool:
         assert "error" in result
 
     def test_diff_no_data(self):
-        from tools.versioning import diff_versions
+        from dataset_analysis_mcp.tools.versioning import diff_versions
 
         result = diff_versions(0, 1)
         assert "error" in result

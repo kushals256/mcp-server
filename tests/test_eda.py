@@ -6,7 +6,7 @@ import pandas as pd
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.eda import describe_dataset, DescribeDatasetRequest
+from dataset_analysis_mcp.tools.eda import describe_dataset, DescribeDatasetRequest
 
 def create_dummy_data():
     data = {

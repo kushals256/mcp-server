@@ -12,8 +12,8 @@ import numpy as np
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.ml_prepare_categorical import ml_prepare_categorical
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.ml_prepare_categorical import ml_prepare_categorical
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 # ============================================================================

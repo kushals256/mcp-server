@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import json
-from tools.data_quality import detect_data_quality_issues
+from dataset_analysis_mcp.tools.data_quality import detect_data_quality_issues
 
 
 def test_detect_data_quality_issues():

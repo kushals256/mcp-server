@@ -13,7 +13,7 @@ import numpy as np
 from typing import Dict, Any, List
 from pydantic import BaseModel, Field
 
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 class ColumnTypeSpec(BaseModel):

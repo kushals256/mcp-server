@@ -1,6 +1,6 @@
 from typing import Dict, Any, List
 from pydantic import BaseModel, Field
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 class GenerateReportResponse(BaseModel):
     steps: List[str] = Field(..., description="List of preprocessing steps performed")

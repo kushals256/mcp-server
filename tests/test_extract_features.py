@@ -12,8 +12,8 @@ import numpy as np
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.extract_features import extract_features
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.extract_features import extract_features
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 def test_datetime_year_extraction():

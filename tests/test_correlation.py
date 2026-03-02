@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from tools.eda import correlation_analysis, CorrelationAnalysisRequest
+from dataset_analysis_mcp.tools.eda import correlation_analysis, CorrelationAnalysisRequest
 
 def create_correlated_data():
     # Create dataset with known relationships

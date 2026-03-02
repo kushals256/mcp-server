@@ -17,7 +17,7 @@ from scipy import stats
 from sklearn.metrics import mutual_info_score
 from pydantic import BaseModel, Field
 
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 class DescribeDatasetRequest(BaseModel):
     dataset_name: str = Field(..., description="Name of the dataset file (e.g., 'data.csv').")

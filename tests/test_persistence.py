@@ -11,8 +11,8 @@ import pandas as pd
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.persistence import generate_preprocessing_report
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.persistence import generate_preprocessing_report
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 def test_empty_history():

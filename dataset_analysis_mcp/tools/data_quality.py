@@ -19,7 +19,7 @@ import pandas as pd
 import numpy as np
 from typing import Dict, Any
 
-from config import (
+from dataset_analysis_mcp.config import (
     MISSING_VALUES_THRESHOLDS,
     OUTLIER_THRESHOLDS,
     HIGH_CARDINALITY_RATIO,
@@ -33,7 +33,7 @@ from config import (
     DEFAULT_IQR_MULTIPLIER,
     DEFAULT_ZSCORE_THRESHOLD, MIN_SAMPLE_SIZE_STATS
 )
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 def detect_data_quality_issues(dataset_name: str) -> Dict[str, Any]:
     """

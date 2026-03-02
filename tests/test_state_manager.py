@@ -4,8 +4,8 @@ import pandas as pd
 import pytest
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils.state_manager import GlobalStateManager
-from tools.save_dataset import save_processed_dataset, SaveDatasetRequest
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.save_dataset import save_processed_dataset, SaveDatasetRequest
 
 
 @pytest.fixture

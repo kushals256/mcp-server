@@ -20,8 +20,8 @@ from typing import List, Dict, Any, Optional
 import pandas as pd
 from pydantic import BaseModel, Field
 
-from config import DATA_DIR, SUPPORTED_LOAD_EXTENSIONS
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.config import DATA_DIR, SUPPORTED_LOAD_EXTENSIONS
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 logger = logging.getLogger(__name__)
 

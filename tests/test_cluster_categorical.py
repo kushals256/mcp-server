@@ -13,8 +13,8 @@ import numpy as np
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.cluster_categorical import cluster_similar_categories, ClusterCategoricalRequest
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.cluster_categorical import cluster_similar_categories, ClusterCategoricalRequest
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 # ============================================================================

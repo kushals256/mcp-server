@@ -11,8 +11,8 @@ import pandas as pd
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from tools.drop_columns import drop_columns
-from utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.drop_columns import drop_columns
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
 
 
 def load_test_data(name="test_drop.csv"):

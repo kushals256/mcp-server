@@ -1,8 +1,8 @@
 import pandas as pd
 from typing import Dict, Any, List, Optional, Union
 from pydantic import BaseModel, Field
-from utils.state_manager import GlobalStateManager
-from tools.discovery import load_dataset_metadata
+from dataset_analysis_mcp.utils.state_manager import GlobalStateManager
+from dataset_analysis_mcp.tools.discovery import load_dataset_metadata
 
 class DropDuplicateRowsRequest(BaseModel):
     dataset_name: str = Field(..., description="Name of the dataset file (e.g. 'test.csv').")
