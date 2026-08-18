@@ -26,16 +26,26 @@ final class StatusBarController {
         if let button = statusItem.button {
             button.image = StatusIcon.image(for: .idle)
             button.image?.isTemplate = false
-            button.toolTip = "Prism"
+            button.toolTip = "Prism — click for controls"
+            button.target = self
+            button.action = #selector(statusBarButtonClicked(_:))
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
-        statusItem.menu = buildMenu()
     }
 
     private func refreshStatus() {
         let state = monitor.currentState(configManager: configManager)
         statusItem.button?.image = StatusIcon.image(for: state)
         statusItem.button?.image?.isTemplate = false
-        statusItem.menu = buildMenu()
+    }
+
+    @objc private func statusBarButtonClicked(_ sender: NSStatusBarButton) {
+        let menu = buildMenu()
+        menu.popUp(
+            positioning: nil,
+            at: NSPoint(x: 0, y: sender.bounds.height + 4),
+            in: sender
+        )
     }
 
     private func buildMenu() -> NSMenu {
@@ -45,6 +55,9 @@ final class StatusBarController {
         let titleItem = NSMenuItem(title: statusTitle(for: state), action: nil, keyEquivalent: "")
         titleItem.isEnabled = false
         menu.addItem(titleItem)
+        menu.addItem(.separator())
+
+        menu.addItem(menuItem("Open Prism Controls…", action: #selector(showSetup)))
         menu.addItem(.separator())
 
         menu.addItem(menuItem("Open Claude Desktop", action: #selector(openClaude)))
