@@ -1,4 +1,6 @@
 ---
+import { asset } from '../utils/paths';
+
 interface Props {
   size?: 'sm' | 'md' | 'lg' | 'hero';
   showWordmark?: boolean;
@@ -20,7 +22,7 @@ const framePadding = {
   hero: 'p-4 md:p-5',
 };
 const textSizes = { sm: 'text-base', md: 'text-lg', lg: 'text-3xl', hero: 'text-3xl' };
-const imageSrc = size === 'hero' ? '/prism-logo-hero.png' : '/prism-logo.png';
+const imageSrc = size === 'hero' ? asset('prism-logo-hero.png') : asset('prism-logo.png');
 ---
 
 <div class="flex items-center gap-3">

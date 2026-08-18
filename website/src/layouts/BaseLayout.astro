@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import PrismLogo from '../components/PrismLogo.astro';
+import { absoluteUrl, asset, route } from '../utils/paths';
 
 const { title = 'Prism', description = 'Turn Claude into your data scientist on Mac.' } = Astro.props;
 const pageTitle = title === 'Prism' ? 'Prism — Dataset Analysis MCP for Mac' : title;
@@ -14,9 +15,9 @@ const pageTitle = title === 'Prism' ? 'Prism — Dataset Analysis MCP for Mac' :
     <meta name="description" content={description} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content="/og-image.png" />
-    <link rel="icon" href="/favicon.png" type="image/png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:image" content={absoluteUrl('og-image.png')} />
+    <link rel="icon" href={asset('favicon.png')} type="image/png" />
+    <link rel="apple-touch-icon" href={asset('apple-touch-icon.png')} />
     <title>{pageTitle}</title>
   </head>
   <body class="min-h-screen">
@@ -28,16 +29,16 @@ const pageTitle = title === 'Prism' ? 'Prism — Dataset Analysis MCP for Mac' :
     <div class="page-wrap">
       <header class="glass-nav sticky top-0 z-50">
         <nav class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <a href="/" class="transition opacity-90 hover:opacity-100">
+          <a href={route()} class="transition opacity-90 hover:opacity-100">
             <PrismLogo size="sm" subtitle={false} />
           </a>
           <div class="hidden items-center gap-8 md:flex">
-            <a href="/install" class="nav-link">Install</a>
-            <a href="/docs" class="nav-link">Docs</a>
-            <a href="/faq" class="nav-link">FAQ</a>
-            <a href="/install" class="btn-primary !px-5 !py-2.5 !text-xs">Download for Mac</a>
+            <a href={route('install')} class="nav-link">Install</a>
+            <a href={route('docs')} class="nav-link">Docs</a>
+            <a href={route('faq')} class="nav-link">FAQ</a>
+            <a href={route('install')} class="btn-primary !px-5 !py-2.5 !text-xs">Download for Mac</a>
           </div>
-          <a href="/install" class="btn-primary !px-4 !py-2 !text-xs md:hidden">Download</a>
+          <a href={route('install')} class="btn-primary !px-4 !py-2 !text-xs md:hidden">Download</a>
         </nav>
       </header>
 
@@ -56,9 +57,9 @@ const pageTitle = title === 'Prism' ? 'Prism — Dataset Analysis MCP for Mac' :
           <div>
             <p class="mb-4 text-xs font-semibold uppercase tracking-widest text-white/35">Product</p>
             <div class="flex flex-col gap-2 text-sm">
-              <a href="/install" class="btn-ghost w-fit">Install</a>
-              <a href="/docs" class="btn-ghost w-fit">Documentation</a>
-              <a href="/faq" class="btn-ghost w-fit">FAQ</a>
+              <a href={route('install')} class="btn-ghost w-fit">Install</a>
+              <a href={route('docs')} class="btn-ghost w-fit">Documentation</a>
+              <a href={route('faq')} class="btn-ghost w-fit">FAQ</a>
             </div>
           </div>
           <div>
