@@ -52,23 +52,29 @@ final class SetupInstaller {
     }
 
     private func installPackage(python: String, onLog: @escaping (String) -> Void) throws {
+        try PipBootstrapper.ensurePip(python: python, onLog: onLog)
+        onLog("First install downloads pandas, scikit-learn, and more — this can take 3–5 minutes.")
+        onLog("Watch the log below for progress. It is normal if it pauses briefly.")
+
         for target in [packageName, gitInstallURL] {
             onLog("Trying pip install \(target)...")
             do {
-                let output = try runCommand(
+                let output = try runCommandStreaming(
                     executable: python,
-                    arguments: ["-m", "pip", "install", "--user", "--upgrade", target]
+                    arguments: ["-m", "pip", "install", "--user", "--upgrade", target],
+                    onLog: onLog
                 )
                 if !output.isEmpty {
                     onLog(output)
                 }
+                onLog("Package installed successfully.")
                 return
             } catch {
                 onLog("Failed: \(error.localizedDescription)")
             }
         }
         throw SetupInstallerError.commandFailed(
-            "Could not install Prism. Check your internet connection and try again."
+            "Could not install Prism. Open Terminal and run:\n\(python) -m pip install --user \(packageName)"
         )
     }
 
@@ -112,6 +118,62 @@ final class SetupInstaller {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let candidate = "\(home)/.local/bin/\(named)"
         return FileManager.default.isExecutableFile(atPath: candidate) ? candidate : nil
+    }
+
+    @discardableResult
+    private func runCommandStreaming(
+        executable: String,
+        arguments: [String],
+        onLog: @escaping (String) -> Void
+    ) throws -> String {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: executable)
+        process.arguments = arguments
+        process.environment = augmentedEnvironment()
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+
+        let handle = pipe.fileHandleForReading
+        var collected = ""
+        handle.readabilityHandler = { fileHandle in
+            let data = fileHandle.availableData
+            guard !data.isEmpty, let chunk = String(data: data, encoding: .utf8) else { return }
+            collected += chunk
+            chunk.split(whereSeparator: \.isNewline).forEach { line in
+                let text = String(line).trimmingCharacters(in: .whitespacesAndNewlines)
+                if !text.isEmpty {
+                    DispatchQueue.main.async {
+                        onLog(text)
+                    }
+                }
+            }
+        }
+
+        try process.run()
+        process.waitUntilExit()
+        handle.readabilityHandler = nil
+
+        let remainder = handle.readDataToEndOfFile()
+        if let tail = String(data: remainder, encoding: .utf8), !tail.isEmpty {
+            collected += tail
+            tail.split(whereSeparator: \.isNewline).forEach { line in
+                let text = String(line).trimmingCharacters(in: .whitespacesAndNewlines)
+                if !text.isEmpty {
+                    onLog(text)
+                }
+            }
+        }
+
+        guard process.terminationStatus == 0 else {
+            let detail = collected.isEmpty
+                ? "Command failed: \(executable) \(arguments.joined(separator: " "))"
+                : collected
+            throw SetupInstallerError.commandFailed(detail)
+        }
+
+        return collected
     }
 
     @discardableResult

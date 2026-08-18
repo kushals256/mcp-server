@@ -381,7 +381,7 @@ final class SetupWindowController: NSWindowController {
         logView.string = ""
         actionButton.isEnabled = false
         actionButton.title = "Setting up…"
-        statusLabel.stringValue = "Working — you'll get a notification for each step."
+        statusLabel.stringValue = "Installing packages — first run can take 3–5 minutes. Watch the log below."
 
         for step in SetupStep.allCases {
             updateStep(step, status: .pending)
