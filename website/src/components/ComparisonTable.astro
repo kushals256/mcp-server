@@ -1,0 +1,49 @@
+---
+const rows = [
+  {
+    topic: 'Data in context',
+    claude: 'Rows pasted or re-loaded each turn',
+    prism: 'Stays in server memory',
+  },
+  {
+    topic: 'Approach each session',
+    claude: 'New script, may differ',
+    prism: 'Same 29 tools every time',
+  },
+  {
+    topic: 'Undo / audit trail',
+    claude: 'None',
+    prism: 'list_versions, rollback_version, diff_versions',
+  },
+  {
+    topic: 'ML safety',
+    claude: 'Only if you prompt for it',
+    prism: 'validate_action, split immutability, cardinality guards',
+  },
+  {
+    topic: 'Reproducibility',
+    claude: 'Copy code from chat',
+    prism: 'export_pipeline_config',
+  },
+  {
+    topic: 'Privacy',
+    claude: 'Depends on product',
+    prism: '100% local on Mac',
+  },
+];
+---
+
+<div class="glass-strong overflow-hidden">
+  <div class="hidden md:grid md:grid-cols-[1.1fr_1fr_1fr] border-b border-white/[0.06] bg-white/[0.03] px-6 py-4 text-xs font-semibold uppercase tracking-widest text-white/40">
+    <div></div>
+    <div>Claude + pandas in chat</div>
+    <div class="text-prism-lime">Prism</div>
+  </div>
+  {rows.map((row) => (
+    <div class="grid gap-3 border-b border-white/[0.04] px-6 py-5 last:border-0 md:grid-cols-[1.1fr_1fr_1fr] md:items-center md:gap-6">
+      <div class="text-sm font-medium text-white/80">{row.topic}</div>
+      <div class="text-sm text-white/45 md:border-l md:border-white/[0.06] md:pl-6">{row.claude}</div>
+      <div class="text-sm text-white/75 md:border-l md:border-prism-lime/20 md:pl-6">{row.prism}</div>
+    </div>
+  ))}
+</div>

@@ -1,45 +1,51 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PrismLogo from '../components/PrismLogo.astro';
-import SectionHeader from '../components/SectionHeader.astro';
 
 const checklist = [
-  'Install the package or open the .dmg',
-  'Run dataset-analysis-mcp-setup',
+  'Run: pip install dataset-analysis-mcp && dataset-analysis-mcp-setup',
   'Run dataset-analysis-mcp-doctor and confirm green checks',
   'Quit Claude Desktop completely (Cmd+Q)',
   'Reopen Claude and try a starter prompt',
+  '(Optional) Install the menu bar app from the .dmg',
 ];
 ---
 
-<BaseLayout title="Install Prism" description="Install Prism on your Mac.">
+<BaseLayout title="Install Prism" description="Install Prism on your Mac — pip setup required, menu bar app optional.">
   <section class="page-hero mx-auto max-w-4xl px-6">
     <div class="reveal">
       <PrismLogo size="md" subtitle={true} />
       <h1 class="section-title mt-8">Install on Mac</h1>
-      <p class="section-subtitle">Wizard-first setup. No manual JSON editing required.</p>
+      <p class="section-subtitle">pip + setup wizard is required. The .dmg is optional — menu bar status only.</p>
     </div>
 
-    <div class="reveal mt-12 grid gap-6 md:grid-cols-2">
-      <div class="glass-strong p-8">
-        <h2 class="text-xl font-semibold text-white">Download .dmg</h2>
-        <p class="mt-2 text-sm text-white/50">Menu bar companion + setup wizard. Requires macOS.</p>
-        <a
-          href="https://github.com/kushals256/mcp-server/releases/latest/download/DatasetAnalysisMCP.dmg"
-          class="btn-primary mt-6 inline-flex"
-        >
-          Download for Mac
-        </a>
-        <p class="mt-4 text-xs text-white/40">
-          Or install via pip below if you only need the MCP server.
-        </p>
+    <div class="reveal mt-12 glass-strong p-8 md:p-10">
+      <div class="mb-2 inline-flex rounded-full border border-prism-lime/30 bg-prism-lime/10 px-3 py-1 text-xs font-medium text-prism-lime">
+        Required
       </div>
-      <div class="glass-strong p-8">
-        <h2 class="text-xl font-semibold text-white">Quick start (pip)</h2>
-        <p class="mt-2 text-sm text-white/50">One command to install and launch the setup wizard.</p>
-        <pre class="code-block mt-5" id="quick-start">pip install dataset-analysis-mcp && dataset-analysis-mcp-setup</pre>
-        <button class="btn-secondary mt-5" data-copy="#quick-start">Copy command</button>
+      <h2 class="mt-4 text-xl font-semibold text-white">Quick start (pip)</h2>
+      <p class="mt-2 text-sm text-white/50">
+        Installs the MCP server, configures Claude Desktop, and copies a sample dataset.
+      </p>
+      <pre class="code-block mt-5" id="quick-start">pip install dataset-analysis-mcp && dataset-analysis-mcp-setup</pre>
+      <button class="btn-primary mt-5" data-copy="#quick-start">Copy command</button>
+    </div>
+
+    <div class="reveal mt-6 glass-card p-8">
+      <div class="mb-2 inline-flex rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-xs font-medium text-white/50">
+        Optional
       </div>
+      <h2 class="mt-4 text-xl font-semibold text-white">Menu bar companion (.dmg)</h2>
+      <p class="mt-2 text-sm leading-relaxed text-white/50">
+        Status icon only — enable/disable server, open data folder, run health check.
+        Does <strong class="text-white/70">not</strong> install the MCP server. Skip if you don't need the menu bar.
+      </p>
+      <a
+        href="https://github.com/kushals256/mcp-server/releases/latest/download/DatasetAnalysisMCP.dmg"
+        class="btn-secondary mt-6 inline-flex"
+      >
+        Download menu bar app
+      </a>
     </div>
 
     <div class="reveal mt-10">
@@ -56,20 +62,11 @@ const checklist = [
       </div>
     </div>
 
-    <div class="reveal mt-10 grid gap-6 md:grid-cols-2">
-      <div class="glass-card p-8">
-        <div class="step-number mb-5">⌘</div>
-        <h2 class="text-xl font-semibold">Menu bar companion</h2>
-        <p class="mt-3 leading-relaxed text-white/55">
-          After setup, the Prism icon appears in your menu bar when the server is active. Click it to disable the server, open your data folder, or run a health check.
-        </p>
-      </div>
-      <div class="glass-card p-8">
-        <div class="step-number mb-5">✦</div>
-        <h2 class="text-xl font-semibold">Your first 5 minutes</h2>
-        <pre class="code-block mt-4 text-xs" id="starter-prompt">Load ~/datasets/sample_sales.csv and run a data quality check</pre>
-        <button class="btn-secondary mt-4 !px-5 !py-2.5 !text-xs" data-copy="#starter-prompt">Copy starter prompt</button>
-      </div>
+    <div class="reveal mt-10 glass-card p-8">
+      <div class="step-number mb-5">✦</div>
+      <h2 class="text-xl font-semibold">Your first 5 minutes</h2>
+      <pre class="code-block mt-4 text-xs" id="starter-prompt">Load ~/datasets/sample_sales.csv and run a data quality check</pre>
+      <button class="btn-secondary mt-4 !px-5 !py-2.5 !text-xs" data-copy="#starter-prompt">Copy starter prompt</button>
     </div>
 
     <details class="faq-item reveal mt-10 p-8">

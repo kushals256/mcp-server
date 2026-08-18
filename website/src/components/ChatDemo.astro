@@ -8,14 +8,19 @@
     <span class="h-3 w-3 rounded-full bg-[#28c840]"></span>
     <span class="ml-3 text-xs text-white/40">Claude · Prism MCP</span>
   </div>
-  <div class="space-y-3 p-5">
-    <div class="chat-bubble-user">Clean sales.csv and find outliers in revenue</div>
-    <div class="chat-bubble-tool">→ load_dataset("sales.csv")</div>
-    <div class="chat-bubble-tool">→ detect_data_quality_issues()</div>
-    <div class="chat-bubble-tool-active">→ remove_outliers(column="revenue")</div>
+  <div class="space-y-2.5 p-5">
+    <div class="chat-bubble-user text-xs leading-relaxed md:text-sm">
+      Prep sales.csv for ML — check quality, fix categories, split 80/20, export pipeline
+    </div>
+    <div class="chat-bubble-tool text-xs">→ load_dataset("sales.csv")</div>
+    <div class="chat-bubble-tool text-xs">→ detect_data_quality_issues()</div>
+    <div class="chat-bubble-tool text-xs">→ harmonize_categorical_values(...)</div>
+    <div class="chat-bubble-tool text-xs">→ train_test_split(test_size=0.2)</div>
+    <div class="chat-bubble-tool-active text-xs">→ export_pipeline_config()</div>
+    <div class="chat-bubble-tool-active text-xs">→ list_versions()</div>
     <div class="mt-2 flex items-center gap-2 px-1 text-xs text-white/35">
       <span class="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-prism-lime"></span>
-      3 tools called · dataset ready
+      Pipeline exported · 5 versions · test set locked
     </div>
   </div>
 </div>

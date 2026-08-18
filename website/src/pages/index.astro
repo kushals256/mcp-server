@@ -3,6 +3,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import SectionHeader from '../components/SectionHeader.astro';
 import ChatDemo from '../components/ChatDemo.astro';
 import MacScreenDemo from '../components/MacScreenDemo.astro';
+import ComparisonTable from '../components/ComparisonTable.astro';
+import UspPillars from '../components/UspPillars.astro';
 import { route } from '../utils/paths';
 
 const prompts = [
@@ -13,18 +15,12 @@ const prompts = [
 ];
 
 const steps = [
-  { title: 'Install', body: 'Download the .dmg or run pip install, then launch the setup wizard.' },
-  { title: 'Connect', body: 'The wizard configures Claude Desktop and installs the menu bar companion.' },
-  { title: 'Analyze', body: 'Load a CSV and ask Claude to clean, explore, and prepare your data.' },
+  { title: 'Install', body: 'Run pip install and the setup wizard — it configures Claude Desktop for you.' },
+  { title: 'Connect', body: 'Quit Claude (Cmd+Q), reopen it, and Prism connects automatically via MCP.' },
+  { title: 'Analyze', body: 'Load a CSV and ask Claude to clean, version, and export a reproducible pipeline.' },
 ];
 
-const stats = [
-  { label: 'MCP tools', value: '28' },
-  { label: 'Test suites', value: '18' },
-  { label: 'Encoding methods', value: '8' },
-];
-
-const trust = ['28 specialized tools', 'Runs locally', 'No data leaves Mac'];
+const trust = ['Data never in chat', 'Version history', 'ML guardrails', 'Runs locally'];
 ---
 
 <BaseLayout>
@@ -34,17 +30,17 @@ const trust = ['28 specialized tools', 'Runs locally', 'No data leaves Mac'];
       <div class="reveal">
         <span class="eyebrow">
           <span class="h-1.5 w-1.5 rounded-full bg-prism-lime"></span>
-          Built for Mac
+          Local data lab for Claude
         </span>
         <h1 class="section-title mt-8">
-          Turn Claude into your<br />
-          <span class="text-gradient">data scientist</span>
+          Claude thinks.<br />
+          <span class="text-gradient">Prism executes.</span>
         </h1>
         <p class="section-subtitle">
-          Prism is a stateful MCP server with 28 specialized tools for cleaning, exploring, encoding, and preparing datasets — without copy-pasting DataFrames.
+          29 tested tools. Your data stays on disk — not in chat. Every step logged, versioned, and exportable.
         </p>
         <div class="mt-10 flex flex-wrap gap-4">
-          <a href={route('install')} class="btn-primary">Download for Mac</a>
+          <a href={route('install')} class="btn-primary">Get started</a>
           <a href="https://github.com/kushals256/mcp-server" class="btn-secondary">View on GitHub</a>
         </div>
         <div class="mt-8 flex flex-wrap gap-3">
@@ -57,6 +53,20 @@ const trust = ['28 specialized tools', 'Runs locally', 'No data leaves Mac'];
       <div class="reveal reveal-delay-2">
         <ChatDemo />
       </div>
+    </div>
+  </section>
+
+  <!-- Comparison -->
+  <section class="mx-auto max-w-6xl px-6 py-20">
+    <div class="reveal">
+      <SectionHeader
+        label="The difference"
+        title="Why not just Claude?"
+        subtitle="Claude can write pandas. Prism gives you a stateful lab with undo, guardrails, and exportable pipelines."
+      />
+    </div>
+    <div class="reveal mt-12">
+      <ComparisonTable />
     </div>
   </section>
 
@@ -84,7 +94,7 @@ const trust = ['28 specialized tools', 'Runs locally', 'No data leaves Mac'];
       <SectionHeader
         label="On your Mac"
         title="Feels native in Claude"
-        subtitle="Ask in plain English — Prism handles the data work behind the scenes."
+        subtitle="Ask in plain English. Prism runs the pipeline on your Mac — Claude never sees your rows."
         centered={true}
       />
     </div>
@@ -114,44 +124,10 @@ const trust = ['28 specialized tools', 'Runs locally', 'No data leaves Mac'];
     </div>
   </section>
 
-  <!-- Stats -->
+  <!-- USP pillars -->
   <section class="mx-auto max-w-6xl px-6 py-20">
-    <div class="glass-strong reveal overflow-hidden p-10 md:p-14">
-      <div class="relative z-10">
-        <SectionHeader
-          label="Why Prism"
-          title="Built for real data work"
-          subtitle="Purpose-built tools, not generic code execution."
-        />
-        <div class="mt-12 grid gap-5 md:grid-cols-3">
-          {stats.map((stat) => (
-            <div class="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-8 text-center">
-              <div class="stat-number">{stat.value}</div>
-              <div class="mt-2 text-sm text-white/50">{stat.label}</div>
-            </div>
-          ))}
-        </div>
-        <div class="mt-14 space-y-6">
-          <div>
-            <div class="mb-3 flex justify-between text-sm text-white/55">
-              <span>Generic Python in chat</span>
-              <span class="text-white/35">4 approaches</span>
-            </div>
-            <div class="stat-bar-track">
-              <div class="stat-bar-fill" style="width: 28%"></div>
-            </div>
-          </div>
-          <div>
-            <div class="mb-3 flex justify-between text-sm text-white/55">
-              <span class="font-medium text-white/75">Prism MCP</span>
-              <span class="text-prism-lime">28 tools</span>
-            </div>
-            <div class="stat-bar-track">
-              <div class="stat-bar-fill" style="width: 100%"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="reveal">
+      <UspPillars />
     </div>
   </section>
 
@@ -160,11 +136,11 @@ const trust = ['28 specialized tools', 'Runs locally', 'No data leaves Mac'];
     <div class="cta-band reveal flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
       <div class="relative z-10">
         <h2 class="text-3xl font-semibold tracking-tight text-white md:text-4xl">
-          Stop copy-pasting DataFrames.
+          Claude thinks. Prism executes.
         </h2>
-        <p class="mt-3 text-lg text-white/55">Install on Mac, connect Claude, and start analyzing.</p>
+        <p class="mt-3 text-lg text-white/55">Install on Mac, connect Claude, and run your first pipeline.</p>
       </div>
-      <a href={route('install')} class="btn-primary relative z-10 shrink-0">Download for Mac</a>
+      <a href={route('install')} class="btn-primary relative z-10 shrink-0">Get started</a>
     </div>
   </section>
 </BaseLayout>

@@ -1,0 +1,59 @@
+---
+const pillars = [
+  {
+    title: 'Your data never enters chat',
+    body: 'load_dataset reads from disk. Only summaries flow back to Claude — not your rows.',
+    tools: 'load_dataset · peek_dataset_metadata',
+  },
+  {
+    title: 'Every step is reversible',
+    body: 'Version snapshots after each transform. Roll back or diff any two states.',
+    tools: 'list_versions · rollback_version · diff_versions',
+  },
+  {
+    title: 'ML mistakes caught before they run',
+    body: 'Dry-run validation, train/test split locks the test set, cardinality guards on encoding.',
+    tools: 'validate_action · train_test_split',
+  },
+  {
+    title: 'Export a real pipeline',
+    body: 'Download every operation as JSON or YAML. Reproduce the exact cleaning flow later.',
+    tools: 'export_pipeline_config · generate_preprocessing_report',
+  },
+];
+
+const stats = [
+  { label: 'MCP tools', value: '29' },
+  { label: 'Test suites', value: '18' },
+  { label: 'Encoding methods', value: '8' },
+];
+---
+
+<div class="glass-strong overflow-hidden p-10 md:p-14">
+  <div class="relative z-10">
+    <p class="section-label">Why Prism</p>
+    <h2 class="section-title">A data lab, not a chat script</h2>
+    <p class="section-subtitle">
+      Purpose-built tools with guardrails Claude won't enforce by default.
+    </p>
+
+    <div class="mt-12 grid gap-5 md:grid-cols-2">
+      {pillars.map((pillar) => (
+        <div class="glass-card p-7">
+          <h3 class="text-lg font-semibold text-white">{pillar.title}</h3>
+          <p class="mt-3 leading-relaxed text-white/55">{pillar.body}</p>
+          <p class="mt-4 font-mono text-xs text-prism-lime/80">{pillar.tools}</p>
+        </div>
+      ))}
+    </div>
+
+    <div class="mt-12 grid gap-4 border-t border-white/[0.06] pt-10 md:grid-cols-3">
+      {stats.map((stat) => (
+        <div class="text-center">
+          <div class="text-3xl font-semibold tracking-tight text-white/90">{stat.value}</div>
+          <div class="mt-1 text-sm text-white/45">{stat.label}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
