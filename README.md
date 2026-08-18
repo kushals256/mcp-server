@@ -6,9 +6,10 @@
     <strong>A stateful Model Context Protocol server that turns LLMs into data scientists.</strong>
   </p>
   <p align="center">
+    <img src="https://img.shields.io/pypi/v/dataset-analysis-mcp?style=for-the-badge" />
     <img src="https://img.shields.io/badge/python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
     <img src="https://img.shields.io/badge/MCP-1.26+-00C7B7?style=for-the-badge" />
-    <img src="https://img.shields.io/badge/tools-23-blueviolet?style=for-the-badge" />
+    <img src="https://img.shields.io/badge/tools-29-blueviolet?style=for-the-badge" />
     <img src="https://img.shields.io/badge/tests-18_suites-success?style=for-the-badge" />
   </p>
 </p>
@@ -40,7 +41,9 @@ Load ~/datasets/sample_sales.csv and run a data quality check
 
 ### Menu bar companion
 
-The setup wizard can install a native Mac menu bar app. When active, a chart icon appears in your menu bar — click it to disable the server, open your data folder, or run a health check.
+Download the **DMG** for the native Mac menu bar app. When active, a chart icon appears in your menu bar — click it to disable the server, open your data folder, or run a health check.
+
+The pip setup wizard configures Claude only; it does not include the menu bar app bundle.
 
 ### Claude Desktop config (auto-written by setup)
 
@@ -48,13 +51,15 @@ The setup wizard can install a native Mac menu bar app. When active, a chart ico
 {
   "mcpServers": {
     "dataset-analysis": {
-      "command": "uvx",
-      "args": ["dataset-analysis-mcp"],
+      "command": "dataset-analysis-mcp",
+      "args": [],
       "env": { "MCP_DATA_DIR": "~/datasets" }
     }
   }
 }
 ```
+
+If you use `uv` instead of pip, `uvx dataset-analysis-mcp` also works.
 
 ### Developer setup
 
@@ -64,6 +69,14 @@ uv sync
 source .venv/bin/activate
 python main.py
 ```
+
+### Releasing
+
+1. Bump `version` in `pyproject.toml`
+2. Commit, tag, and push: `git tag v0.1.2 && git push origin main --tags`
+3. The **Release** GitHub Action builds the DMG, uploads assets, and publishes to PyPI
+
+For PyPI trusted publishing, add a pending publisher for workflow `release.yml` at [pypi.org/manage/account/publishing/](https://pypi.org/manage/account/publishing/).
 
 ---
 
@@ -132,7 +145,7 @@ By default, `data/` is resolved relative to where you start the server. You can 
 
 ---
 
-## 🛠️ All 22 Tools
+## 🛠️ All 29 Tools
 
 ### Phase 1 — Discovery
 
@@ -149,7 +162,6 @@ By default, `data/` is resolved relative to where you start the server. You can 
 |:-----|:------------|
 | `save_processed_dataset` | Save to CSV / JSON / Parquet (train or test split) |
 | `export_pipeline_config` | Export all operations as reproducible JSON / YAML |
-| `generate_preprocessing_report` | Generate a summary report of all transformations |
 
 ### Phase 3 — Analysis
 
@@ -197,12 +209,24 @@ A 4-layer pipeline that runs **before encoding** to clean messy categorical data
 | Tool | Description |
 |:-----|:------------|
 | `create_feature` | Create derived columns from Python/pandas expressions |
+| `extract_features` | Extract numeric features from text or datetime columns |
+| `reduce_features` | Dimensionality reduction (PCA, feature selection) |
+| `remove_features` | Drop engineered or redundant feature columns |
+| `generate_preprocessing_report` | Generate a summary report of all transformations |
 
 ### Phase 6 — Validation & Safety
 
 | Tool | Description |
 |:-----|:------------|
 | `validate_action` | Dry-run any tool — get memory estimates and risk flags before executing |
+
+### Phase 7 — Versioning
+
+| Tool | Description |
+|:-----|:------------|
+| `list_versions` | List saved dataset versions in memory |
+| `rollback_version` | Restore a previous dataset version |
+| `diff_versions` | Compare two versions side by side |
 
 ---
 
@@ -224,9 +248,9 @@ A 4-layer pipeline that runs **before encoding** to clean messy categorical data
 
 ```
 mcp-server/
-├── main.py                             # Server entry point — registers all 22 tools
+├── main.py                             # Server entry point — registers all 29 tools
 ├── config.py                           # Centralized thresholds & constants
-├── tools/                              # Tool implementations (23 files)
+├── tools/                              # Tool implementations
 │   ├── discovery.py                    #   list, load, peek datasets
 │   ├── save_dataset.py                 #   save data + export pipeline
 │   ├── persistence.py                  #   preprocessing reports
@@ -244,6 +268,7 @@ mcp-server/
 │   ├── cluster_categorical.py          #   Layer 3: fuzzy clustering
 │   ├── ml_prepare_categorical.py       #   Layer 4: ML-aware prep
 │   ├── feature_engineering.py          #   expression-based features
+│   ├── versioning.py                   #   list, rollback, diff versions
 │   └── validation.py                   #   dry-run safety checks
 ├── utils/
 │   └── state_manager.py                # GlobalStateManager singleton
@@ -390,7 +415,7 @@ uv sync           # or pip install -r requirements.txt
 <summary><strong>"Unknown tool" in validate_action</strong></summary>
 
 Ensure the tool name matches exactly — use the registered function name, not aliases.
-All 22 tools are covered in `validate_action` as of the latest version.
+All 29 tools are covered in `validate_action` as of the latest version.
 </details>
 
 <details>

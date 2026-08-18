@@ -22,6 +22,17 @@ def test_build_mcp_entry_uvx():
     assert entry["env"]["MCP_DATA_DIR"] == "/tmp/data"
 
 
+def test_build_mcp_entry_installed_cli():
+    entry = build_mcp_entry(
+        use_installed_cli=True,
+        package_command="/Users/me/.local/bin/dataset-analysis-mcp",
+        data_dir="/tmp/data",
+    )
+    assert entry["command"] == "/Users/me/.local/bin/dataset-analysis-mcp"
+    assert entry["args"] == []
+    assert entry["env"]["MCP_DATA_DIR"] == "/tmp/data"
+
+
 def test_merge_and_remove_mcp_entry():
     config = {"mcpServers": {"other": {"command": "echo"}}}
     entry = build_mcp_entry(use_uvx=True)
@@ -49,6 +60,7 @@ def test_save_and_load_roundtrip(tmp_path, monkeypatch):
     monkeypatch.setattr("utils.claude_config.claude_config_path", lambda: config_path)
     monkeypatch.setattr("utils.claude_config.state_dir", lambda: tmp_path / "state")
     monkeypatch.setattr("utils.claude_config.install_log_path", lambda: tmp_path / "state" / "install.log")
+    (tmp_path / "state").mkdir(parents=True, exist_ok=True)
 
     from utils.claude_config import backup_config, load_config, save_config
 
@@ -67,12 +79,14 @@ def test_run_setup_noninteractive_writes_config(tmp_path, monkeypatch):
     data_dir = tmp_path / "datasets"
     monkeypatch.setattr("cli.platform.system", lambda: "Darwin")
     monkeypatch.setattr("cli.resolve_python_command", lambda: sys.executable)
+    monkeypatch.setattr("cli.resolve_package_command", lambda: None)
     monkeypatch.setattr("cli.resolve_uvx_command", lambda: None)
     monkeypatch.setattr("cli.claude_config_path", lambda: config_path)
     monkeypatch.setattr("cli.state_dir", lambda: tmp_path / "state")
     monkeypatch.setattr("cli.install_log_path", lambda: tmp_path / "state" / "install.log")
     monkeypatch.setattr("cli.ensure_data_dir", lambda path=None: data_dir)
     monkeypatch.setattr("cli.SAMPLE_SOURCE", tmp_path / "missing.csv")
+    monkeypatch.setattr("cli.append_install_log", lambda msg: None)
 
     from cli import run_setup_noninteractive
 
@@ -103,6 +117,7 @@ def test_install_package_success(monkeypatch):
 
 def test_doctor_returns_nonzero_when_python_missing(monkeypatch):
     monkeypatch.setattr("cli.resolve_python_command", lambda: None)
+    monkeypatch.setattr("cli.append_install_log", lambda msg: None)
     from cli import run_doctor
 
     assert run_doctor() == 1

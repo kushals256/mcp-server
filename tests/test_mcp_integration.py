@@ -21,9 +21,9 @@ def test_mcp_server_initialization():
 
 
 def test_all_tools_registered():
-    """Test that all 27 expected tools are importable and callable."""
+    """Test that all 29 expected tools are importable and callable."""
 
-    from tools.discovery import list_datasets, load_dataset_metadata, peek_dataset_metadata
+    from tools.discovery import list_datasets, load_dataset_metadata, peek_dataset_metadata, load_dataset
     from tools.save_dataset import save_processed_dataset, export_pipeline_config
     from tools.eda import describe_dataset, correlation_analysis
     from tools.data_quality import detect_data_quality_issues
@@ -51,6 +51,7 @@ def test_all_tools_registered():
         "list_datasets": list_datasets,
         "load_dataset_metadata": load_dataset_metadata,
         "peek_dataset_metadata": peek_dataset_metadata,
+        "load_dataset": load_dataset,
         # Phase 2: Persistence
         "save_processed_dataset": save_processed_dataset,
         "export_pipeline_config": export_pipeline_config,
@@ -85,7 +86,7 @@ def test_all_tools_registered():
         "diff_versions": diff_versions,
     }
 
-    assert len(tools_map) == 28, f"Expected 28 tools, got {len(tools_map)}"
+    assert len(tools_map) == 29, f"Expected 29 tools, got {len(tools_map)}"
 
     for tool_name, func in tools_map.items():
         assert callable(func), f"Tool '{tool_name}' should be callable"

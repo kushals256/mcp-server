@@ -36,7 +36,9 @@ def disabled_flag_path() -> Path:
 
 def append_install_log(message: str) -> None:
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with install_log_path().open("a", encoding="utf-8") as handle:
+    log_path = install_log_path()
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8") as handle:
         handle.write(f"[{timestamp}] {message}\n")
 
 
@@ -71,12 +73,22 @@ def save_config(config: Dict[str, Any], path: Optional[Path] = None) -> Path:
 def build_mcp_entry(
     *,
     use_uvx: bool = True,
+    use_installed_cli: bool = False,
+    package_command: Optional[str] = None,
     python_path: Optional[str] = None,
     main_path: Optional[str] = None,
     data_dir: Optional[str] = None,
 ) -> Dict[str, Any]:
     entry: Dict[str, Any]
-    if use_uvx:
+    if use_installed_cli:
+        command = package_command or resolve_package_command()
+        if not command:
+            raise ValueError("package_command is required when use_installed_cli=True")
+        entry = {
+            "command": command,
+            "args": [],
+        }
+    elif use_uvx:
         entry = {
             "command": "uvx",
             "args": ["dataset-analysis-mcp"],
@@ -158,6 +170,20 @@ def resolve_uvx_command() -> Optional[str]:
     for candidate in ("uvx", os.path.expanduser("~/.local/bin/uvx")):
         if shutil.which(candidate):
             return candidate
+    return None
+
+
+def resolve_package_command() -> Optional[str]:
+    """Return the dataset-analysis-mcp CLI if installed via pip."""
+    for candidate in (
+        "dataset-analysis-mcp",
+        os.path.expanduser("~/.local/bin/dataset-analysis-mcp"),
+    ):
+        resolved = shutil.which(candidate)
+        if resolved:
+            return resolved
+        if Path(candidate).is_file():
+            return str(Path(candidate).resolve())
     return None
 
 

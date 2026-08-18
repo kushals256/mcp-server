@@ -28,6 +28,7 @@ from utils.claude_config import (
     load_config,
     merge_mcp_entry,
     remove_mcp_entry,
+    resolve_package_command,
     resolve_python_command,
     resolve_uvx_command,
     save_config,
@@ -76,12 +77,19 @@ def _copy_sample_dataset(data_dir: Path) -> Path:
 
 
 def _install_menubar_app() -> bool:
-    repo_app = Path(__file__).resolve().parent / "macos" / "build" / "Prism.app"
     target_app = Path("/Applications") / "Prism.app"
+    if target_app.exists():
+        print(f"Menu bar companion already installed at {target_app}")
+        append_install_log(f"Menu bar app already present at {target_app}")
+        return True
 
+    repo_app = Path(__file__).resolve().parent / "macos" / "build" / "Prism.app"
     if not repo_app.exists():
-        print("Menu bar app bundle not found yet. Build it with: macos/scripts/build-app.sh")
-        append_install_log("Menu bar app bundle missing during setup")
+        print(
+            "Menu bar app is not included in the pip package. "
+            "Download the DMG from https://github.com/kushals256/mcp-server/releases/latest"
+        )
+        append_install_log("Menu bar app bundle missing during pip setup")
         return False
 
     if target_app.exists():
@@ -90,6 +98,31 @@ def _install_menubar_app() -> bool:
     append_install_log(f"Installed menu bar app to {target_app}")
     print(f"Installed menu bar companion to {target_app}")
     return True
+
+
+def _build_setup_entry(*, python_cmd: str, data_dir: str) -> dict:
+    package_cmd = resolve_package_command()
+    if package_cmd:
+        return build_mcp_entry(use_installed_cli=True, package_command=package_cmd, data_dir=data_dir)
+
+    if resolve_uvx_command() is not None:
+        return build_mcp_entry(use_uvx=True, data_dir=data_dir)
+
+    main_path = str(Path(__file__).resolve().parent / "main.py")
+    return build_mcp_entry(
+        use_uvx=False,
+        python_path=python_cmd,
+        main_path=main_path,
+        data_dir=data_dir,
+    )
+
+
+def _describe_launch_mode() -> str:
+    if resolve_package_command():
+        return "pip-installed CLI"
+    if resolve_uvx_command() is not None:
+        return "uvx"
+    return "current Python interpreter"
 
 
 def install_package() -> int:
@@ -175,11 +208,8 @@ def run_setup() -> int:
         return 1
     print(f"Python {version} found at {python_cmd}")
 
-    use_uvx = resolve_uvx_command() is not None
-    if use_uvx:
-        print("uvx found — will configure Claude to launch the server with uvx.")
-    else:
-        print("uvx not found — will configure Claude with the current Python interpreter.")
+    launch_mode = _describe_launch_mode()
+    print(f"Will configure Claude to launch the server with {launch_mode}.")
 
     data_dir = ensure_data_dir()
     if _prompt_yes_no(f"Use data folder {data_dir}?", default=True):
@@ -192,16 +222,7 @@ def run_setup() -> int:
     config = load_config(config_path)
     backup_config(config_path)
 
-    if use_uvx:
-        entry = build_mcp_entry(use_uvx=True, data_dir=str(data_dir))
-    else:
-        main_path = str(Path(__file__).resolve().parent / "main.py")
-        entry = build_mcp_entry(
-            use_uvx=False,
-            python_path=python_cmd,
-            main_path=main_path,
-            data_dir=str(data_dir),
-        )
+    entry = _build_setup_entry(python_cmd=python_cmd, data_dir=str(data_dir))
 
     updated = merge_mcp_entry(config, entry)
     save_config(updated, config_path)
@@ -347,23 +368,13 @@ def run_setup_noninteractive(
         print("Python 3.10+ is required.")
         return 1
 
-    resolved_uvx = use_uvx if use_uvx is not None else resolve_uvx_command() is not None
     folder = ensure_data_dir(data_dir)
 
     config_path = claude_config_path()
     config = load_config(config_path)
     backup_config(config_path)
 
-    if resolved_uvx:
-        entry = build_mcp_entry(use_uvx=True, data_dir=str(folder))
-    else:
-        main_path = str(Path(__file__).resolve().parent / "main.py")
-        entry = build_mcp_entry(
-            use_uvx=False,
-            python_path=python_cmd,
-            main_path=main_path,
-            data_dir=str(folder),
-        )
+    entry = _build_setup_entry(python_cmd=python_cmd, data_dir=str(folder))
 
     save_config(merge_mcp_entry(config, entry), config_path)
     set_disabled(False)
