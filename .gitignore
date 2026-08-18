@@ -35,6 +35,8 @@ website/node_modules/
 website/dist/
 website/.astro/
 .venv-brand/
+.venv-pub/
+.venv-test/
 
 # Project-specific
 data/*

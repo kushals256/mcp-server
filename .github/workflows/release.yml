@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+  id-token: write
+
 jobs:
   python:
     runs-on: macos-latest
@@ -17,6 +21,13 @@ jobs:
         run: uv run pytest tests/ -q
       - name: Build package
         run: uv build
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
       - name: Build menu bar app
         run: bash macos/scripts/build-app.sh
       - name: Build dmg
