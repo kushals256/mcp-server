@@ -1,6 +1,7 @@
 """Tests for Claude config helpers and CLI doctor checks."""
 
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -59,6 +60,45 @@ def test_save_and_load_roundtrip(tmp_path, monkeypatch):
     backup = backup_config(config_path)
     assert backup is not None
     assert backup.exists()
+
+
+def test_run_setup_noninteractive_writes_config(tmp_path, monkeypatch):
+    config_path = tmp_path / "claude_desktop_config.json"
+    data_dir = tmp_path / "datasets"
+    monkeypatch.setattr("cli.platform.system", lambda: "Darwin")
+    monkeypatch.setattr("cli.resolve_python_command", lambda: sys.executable)
+    monkeypatch.setattr("cli.resolve_uvx_command", lambda: None)
+    monkeypatch.setattr("cli.claude_config_path", lambda: config_path)
+    monkeypatch.setattr("cli.state_dir", lambda: tmp_path / "state")
+    monkeypatch.setattr("cli.install_log_path", lambda: tmp_path / "state" / "install.log")
+    monkeypatch.setattr("cli.ensure_data_dir", lambda path=None: data_dir)
+    monkeypatch.setattr("cli.SAMPLE_SOURCE", tmp_path / "missing.csv")
+
+    from cli import run_setup_noninteractive
+
+    assert run_setup_noninteractive(data_dir=str(data_dir)) == 0
+    saved = json.loads(config_path.read_text(encoding="utf-8"))
+    assert MCP_SERVER_KEY in saved["mcpServers"]
+
+
+def test_install_package_success(monkeypatch):
+    calls = []
+
+    def fake_run(cmd, check=False):
+        calls.append(cmd)
+        class Result:
+            returncode = 0
+        return Result()
+
+    monkeypatch.setattr("cli.resolve_python_command", lambda: sys.executable)
+    monkeypatch.setattr("cli.subprocess.check_output", lambda *a, **k: "3.12.0")
+    monkeypatch.setattr("cli.subprocess.run", fake_run)
+    monkeypatch.setattr("cli.append_install_log", lambda msg: None)
+
+    from cli import install_package
+
+    assert install_package() == 0
+    assert calls[0][0] == sys.executable
 
 
 def test_doctor_returns_nonzero_when_python_missing(monkeypatch):

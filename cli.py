@@ -36,6 +36,7 @@ from utils.claude_config import (
 )
 
 PACKAGE_NAME = "dataset-analysis-mcp"
+GIT_INSTALL_URL = "git+https://github.com/kushals256/mcp-server.git"
 SAMPLE_SOURCE = Path(__file__).resolve().parent / "examples" / "sample_sales.csv"
 
 
@@ -91,7 +92,68 @@ def _install_menubar_app() -> bool:
     return True
 
 
+def install_package() -> int:
+    """Install the MCP package via pip (PyPI first, then git fallback)."""
+    python_cmd = resolve_python_command()
+    if not python_cmd:
+        print("Python 3.10+ is required. Install from https://www.python.org/downloads/")
+        return 1
+
+    version = subprocess.check_output(
+        [python_cmd, "-c", "import sys; print('.'.join(map(str, sys.version_info[:3])))"],
+        text=True,
+    ).strip()
+    major, minor, *_ = (int(part) for part in version.split("."))
+    if (major, minor) < (3, 10):
+        print(f"Python {version} found, but 3.10+ is required.")
+        return 1
+
+    append_install_log("Package install started")
+    for target in (PACKAGE_NAME, GIT_INSTALL_URL):
+        print(f"Installing {target}...")
+        result = subprocess.run(
+            [python_cmd, "-m", "pip", "install", "--user", "--upgrade", target],
+            check=False,
+        )
+        if result.returncode == 0:
+            append_install_log(f"Installed package from {target}")
+            print("Package installed successfully.")
+            return 0
+        print(f"Install failed for {target}.")
+
+    print("Could not install Prism. Check your internet connection and try again.")
+    append_install_log("Package install failed")
+    return 1
+
+
+def run_setup_cli() -> None:
+    """Entry point for dataset-analysis-mcp-setup with optional flags."""
+    parser = argparse.ArgumentParser(prog="dataset-analysis-mcp-setup")
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Non-interactive setup with defaults (for Prism.app one-click install)",
+    )
+    parser.add_argument(
+        "--install-package",
+        action="store_true",
+        help="Run pip install before configuring Claude",
+    )
+    args = parser.parse_args()
+
+    if args.install_package:
+        code = install_package()
+        if code != 0:
+            raise SystemExit(code)
+
+    if args.yes:
+        raise SystemExit(run_setup_noninteractive())
+
+    raise SystemExit(run_setup())
+
+
 def run_setup() -> int:
+    """Interactive macOS setup wizard."""
     _print_header("Prism — Mac Setup")
 
     if platform.system() != "Darwin":
@@ -318,13 +380,21 @@ def main(argv: List[str] | None = None) -> int:
     subparsers = parser.add_subparsers(dest="command")
 
     subparsers.add_parser("serve", help="Run the MCP server")
-    subparsers.add_parser("setup", help="Run the macOS setup wizard")
+    setup_parser = subparsers.add_parser("setup", help="Run the macOS setup wizard")
+    setup_parser.add_argument("--yes", action="store_true")
+    setup_parser.add_argument("--install-package", action="store_true")
     subparsers.add_parser("doctor", help="Run health checks")
     subparsers.add_parser("disable", help="Disable the MCP server in Claude config")
     subparsers.add_parser("enable", help="Re-enable the MCP server")
 
     args = parser.parse_args(argv)
     if args.command == "setup":
+        if args.install_package:
+            code = install_package()
+            if code != 0:
+                return code
+        if args.yes:
+            return run_setup_noninteractive()
         return run_setup()
     if args.command == "doctor":
         return run_doctor()

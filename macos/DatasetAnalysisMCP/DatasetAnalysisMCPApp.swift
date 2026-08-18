@@ -14,9 +14,27 @@ struct DatasetAnalysisMCPApp {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusBarController: StatusBarController?
+    private var setupWindowController: SetupWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        statusBarController = StatusBarController()
+        statusBarController = StatusBarController(
+            onRequestSetup: { [weak self] in
+                self?.showSetupWindow()
+            }
+        )
+
+        let configManager = ConfigManager()
+        let hasCompleted = UserDefaults.standard.bool(forKey: SetupWindowController.setupCompletedKey)
+        if !configManager.isConfigured || !hasCompleted {
+            showSetupWindow()
+        }
+    }
+
+    func showSetupWindow() {
+        if setupWindowController == nil {
+            setupWindowController = SetupWindowController()
+        }
+        setupWindowController?.showWindow()
     }
 
     func applicationWillTerminate(_ notification: Notification) {

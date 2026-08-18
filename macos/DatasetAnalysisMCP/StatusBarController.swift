@@ -6,8 +6,10 @@ final class StatusBarController {
     private let monitor = ProcessMonitor()
     private let configManager = ConfigManager()
     private var timer: Timer?
+    private let onRequestSetup: () -> Void
 
-    init() {
+    init(onRequestSetup: @escaping () -> Void = {}) {
+        self.onRequestSetup = onRequestSetup
         configureStatusItem()
         refreshStatus()
         timer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
@@ -48,6 +50,14 @@ final class StatusBarController {
         menu.addItem(menuItem("Open Claude Desktop", action: #selector(openClaude)))
         menu.addItem(menuItem("Open Data Folder", action: #selector(openDataFolder)))
         menu.addItem(.separator())
+
+        if !configManager.isConfigured {
+            menu.addItem(menuItem("Set Up Prism…", action: #selector(showSetup)))
+            menu.addItem(.separator())
+        } else {
+            menu.addItem(menuItem("Run Setup Again…", action: #selector(showSetup)))
+            menu.addItem(.separator())
+        }
 
         if configManager.isConfigured && !configManager.isDisabled {
             menu.addItem(menuItem("Disable Server", action: #selector(disableServer)))
@@ -121,9 +131,13 @@ final class StatusBarController {
     }
 
     @objc private func openDocs() {
-        if let url = URL(string: "https://github.com/kushals256/mcp-server") {
+        if let url = URL(string: "https://kushals256.github.io/mcp-server/install/") {
             NSWorkspace.shared.open(url)
         }
+    }
+
+    @objc private func showSetup() {
+        onRequestSetup()
     }
 
     @objc private func quit() {

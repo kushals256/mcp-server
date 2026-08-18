@@ -7,6 +7,8 @@ import ComparisonTable from '../components/ComparisonTable.astro';
 import UspPillars from '../components/UspPillars.astro';
 import { route } from '../utils/paths';
 
+const dmgUrl = 'https://github.com/kushals256/mcp-server/releases/latest/download/DatasetAnalysisMCP.dmg';
+
 const prompts = [
   'Find outliers in my sales CSV',
   'Normalize messy category names before encoding',
@@ -15,9 +17,9 @@ const prompts = [
 ];
 
 const steps = [
-  { title: 'Install', body: 'Run pip install and the setup wizard — it configures Claude Desktop for you.' },
-  { title: 'Connect', body: 'Quit Claude (Cmd+Q), reopen it, and Prism connects automatically via MCP.' },
-  { title: 'Analyze', body: 'Load a CSV and ask Claude to clean, version, and export a reproducible pipeline.' },
+  { title: 'Download', body: 'Get the DMG, drag Prism to Applications, and open the app.' },
+  { title: 'One click', body: 'Click Set up Prism — it installs everything and configures Claude for you.' },
+  { title: 'Analyze', body: 'Quit Claude (Cmd+Q), reopen it, and ask Claude to work on your CSV.' },
 ];
 
 const trust = ['Data never in chat', 'Version history', 'ML guardrails', 'Runs locally'];
@@ -40,8 +42,8 @@ const trust = ['Data never in chat', 'Version history', 'ML guardrails', 'Runs l
           29 tested tools. Your data stays on disk — not in chat. Every step logged, versioned, and exportable.
         </p>
         <div class="mt-10 flex flex-wrap gap-4">
-          <a href={route('install')} class="btn-primary">Get started</a>
-          <a href="https://github.com/kushals256/mcp-server" class="btn-secondary">View on GitHub</a>
+          <a href={dmgUrl} class="btn-primary">Download for Mac</a>
+          <a href={route('install')} class="btn-secondary">Manual install</a>
         </div>
         <div class="mt-8 flex flex-wrap gap-3">
           {trust.map((item) => (
@@ -140,7 +142,7 @@ const trust = ['Data never in chat', 'Version history', 'ML guardrails', 'Runs l
         </h2>
         <p class="mt-3 text-lg text-white/55">Install on Mac, connect Claude, and run your first pipeline.</p>
       </div>
-      <a href={route('install')} class="btn-primary relative z-10 shrink-0">Get started</a>
+      <a href={dmgUrl} class="btn-primary relative z-10 shrink-0">Download for Mac</a>
     </div>
   </section>
 </BaseLayout>

@@ -1,6 +1,6 @@
 [project]
 name = "dataset-analysis-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "A stateful Model Context Protocol server that turns LLMs into data scientists on macOS"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -43,7 +43,7 @@ Documentation = "https://kushals256.github.io/mcp-server/install/"
 
 [project.scripts]
 dataset-analysis-mcp = "cli:run_server"
-dataset-analysis-mcp-setup = "cli:run_setup"
+dataset-analysis-mcp-setup = "cli:run_setup_cli"
 dataset-analysis-mcp-doctor = "cli:run_doctor"
 dataset-analysis-mcp-disable = "cli:run_disable"
 dataset-analysis-mcp-enable = "cli:run_enable"

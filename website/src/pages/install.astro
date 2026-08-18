@@ -2,62 +2,64 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PrismLogo from '../components/PrismLogo.astro';
 
-const checklist = [
+const dmgUrl = 'https://github.com/kushals256/mcp-server/releases/latest/download/DatasetAnalysisMCP.dmg';
+
+const easySteps = [
+  'Download and open the DMG',
+  'Drag Prism to Applications',
+  'Open Prism and click "Set up Prism"',
+  'Quit Claude Desktop (Cmd+Q), reopen it, and try a starter prompt',
+];
+
+const manualChecklist = [
   'Run: pip install dataset-analysis-mcp && dataset-analysis-mcp-setup',
   'Run dataset-analysis-mcp-doctor and confirm green checks',
   'Quit Claude Desktop completely (Cmd+Q)',
   'Reopen Claude and try a starter prompt',
-  '(Optional) Install the menu bar app from the .dmg',
 ];
 ---
 
-<BaseLayout title="Install Prism" description="Install Prism on your Mac — pip setup required, menu bar app optional.">
+<BaseLayout title="Install Prism" description="Easy DMG setup for Mac, or manual pip install for developers.">
   <section class="page-hero mx-auto max-w-4xl px-6">
     <div class="reveal">
       <PrismLogo size="md" subtitle={true} />
       <h1 class="section-title mt-8">Install on Mac</h1>
-      <p class="section-subtitle">pip + setup wizard is required. The .dmg is optional — menu bar status only.</p>
+      <p class="section-subtitle">Most people: download the app and click one button. Developers: use Terminal.</p>
     </div>
 
     <div class="reveal mt-12 glass-strong p-8 md:p-10">
       <div class="mb-2 inline-flex rounded-full border border-prism-lime/30 bg-prism-lime/10 px-3 py-1 text-xs font-medium text-prism-lime">
-        Required
+        Recommended · Easy setup
       </div>
-      <h2 class="mt-4 text-xl font-semibold text-white">Quick start (pip)</h2>
-      <p class="mt-2 text-sm text-white/50">
-        Installs the MCP server, configures Claude Desktop, and copies a sample dataset.
+      <h2 class="mt-4 text-xl font-semibold text-white">Download Prism.app</h2>
+      <p class="mt-2 text-sm leading-relaxed text-white/50">
+        Open the app and click <strong class="text-white/70">Set up Prism</strong>. It installs the MCP server,
+        writes your Claude config, copies sample data, and runs a health check — no Terminal needed.
       </p>
-      <pre class="code-block mt-5" id="quick-start">pip install dataset-analysis-mcp && dataset-analysis-mcp-setup</pre>
-      <button class="btn-primary mt-5" data-copy="#quick-start">Copy command</button>
+      <a href={dmgUrl} class="btn-primary mt-6 inline-flex">Download for Mac</a>
+      <ol class="mt-8 space-y-3 text-sm text-white/70">
+        {easySteps.map((step, index) => (
+          <li class="flex gap-3">
+            <span class="step-number !mb-0 h-7 w-7 shrink-0 text-xs">{index + 1}</span>
+            <span>{step}</span>
+          </li>
+        ))}
+      </ol>
     </div>
 
     <div class="reveal mt-6 glass-card p-8">
       <div class="mb-2 inline-flex rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-xs font-medium text-white/50">
-        Optional
+        Advanced · Manual setup
       </div>
-      <h2 class="mt-4 text-xl font-semibold text-white">Menu bar companion (.dmg)</h2>
-      <p class="mt-2 text-sm leading-relaxed text-white/50">
-        Status icon only — enable/disable server, open data folder, run health check.
-        Does <strong class="text-white/70">not</strong> install the MCP server. Skip if you don't need the menu bar.
-      </p>
-      <a
-        href="https://github.com/kushals256/mcp-server/releases/latest/download/DatasetAnalysisMCP.dmg"
-        class="btn-secondary mt-6 inline-flex"
-      >
-        Download menu bar app
-      </a>
-    </div>
-
-    <div class="reveal mt-10">
-      <p class="section-label">Checklist</p>
-      <div class="grid gap-3">
-        {checklist.map((item, index) => (
-          <label class="glass-card flex cursor-pointer items-center gap-4 p-5">
-            <input type="checkbox" class="h-4 w-4 rounded border-white/20 bg-transparent accent-prism-lime" />
-            <span class="text-white/80">
-              <strong class="text-prism-lime">Step {index + 1}.</strong> {item}
-            </span>
-          </label>
+      <h2 class="mt-4 text-xl font-semibold text-white">Terminal (pip)</h2>
+      <p class="mt-2 text-sm text-white/50">For developers who prefer the command line.</p>
+      <pre class="code-block mt-5" id="quick-start">pip install dataset-analysis-mcp && dataset-analysis-mcp-setup</pre>
+      <button class="btn-secondary mt-5" data-copy="#quick-start">Copy command</button>
+      <div class="mt-6 grid gap-3">
+        {manualChecklist.map((item, index) => (
+          <div class="rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-3 text-sm text-white/70">
+            <strong class="text-prism-lime">Step {index + 1}.</strong> {item}
+          </div>
         ))}
       </div>
     </div>
