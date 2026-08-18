@@ -45,6 +45,10 @@ fi
 
 /usr/libexec/PlistBuddy -c "Add :CFBundleExecutable string $BINARY_NAME" "$APP_DIR/Contents/Info.plist" 2>/dev/null || true
 
+echo "Code signing app (ad-hoc)..."
+codesign --force --deep --sign - "$APP_DIR"
+codesign --verify --verbose "$APP_DIR"
+
 # Compatibility symlink for older setup script path
 rm -rf "$BUILD_DIR/Dataset Analysis MCP.app"
 ln -s "$APP_NAME" "$BUILD_DIR/Dataset Analysis MCP.app"
