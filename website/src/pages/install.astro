@@ -3,12 +3,45 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import PrismLogo from '../components/PrismLogo.astro';
 
 const dmgUrl = 'https://github.com/kushals256/mcp-server/releases/latest/download/DatasetAnalysisMCP.dmg';
+const starterPrompt = 'Load ~/datasets/sample_sales.csv and run a data quality check';
 
-const easySteps = [
-  'Download and open the DMG',
-  'Drag Prism to Applications',
-  'Open Prism and click "Set up Prism"',
-  'Quit Claude Desktop (Cmd+Q), reopen it, and try a starter prompt',
+const beforeYouStart = [
+  {
+    title: 'Download the DMG and drag Prism to Applications',
+    body: 'Standard Mac install — open the DMG, drag Prism to Applications, then launch it from there.',
+  },
+  {
+    title: 'Install Python 3.10+',
+    body: 'Prism uses Python to run the MCP server. Download from python.org if you do not have it yet.',
+    link: { label: 'python.org/downloads', href: 'https://www.python.org/downloads/' },
+  },
+  {
+    title: 'Install Claude Desktop',
+    body: 'Prism configures Claude for you, but Claude must already be on your Mac.',
+    link: { label: 'claude.ai/download', href: 'https://claude.ai/download' },
+  },
+];
+
+const prismAutomates = [
+  'Install dataset-analysis-mcp from PyPI',
+  'Write your Claude Desktop MCP config',
+  'Copy a sample CSV to ~/datasets',
+  'Run an automatic health check',
+];
+
+const youStillDo = [
+  {
+    title: 'Click “Set up Prism” in the app',
+    body: 'One button inside Prism — no Terminal. The app shows progress and sends notifications for each step.',
+  },
+  {
+    title: 'Quit Claude Desktop (Cmd+Q) and reopen it',
+    body: 'Claude only picks up new MCP servers after a full quit — not just closing the window.',
+  },
+  {
+    title: 'Paste the starter prompt in Claude',
+    body: starterPrompt,
+  },
 ];
 
 const manualChecklist = [
@@ -24,7 +57,9 @@ const manualChecklist = [
     <div class="reveal">
       <PrismLogo size="md" subtitle={true} />
       <h1 class="section-title mt-8">Install on Mac</h1>
-      <p class="section-subtitle">Most people: download the app and click one button. Developers: use Terminal.</p>
+      <p class="section-subtitle">
+        Prism automates server install and Claude config. A few steps still need you — listed clearly below.
+      </p>
     </div>
 
     <div class="reveal mt-12 glass-strong p-8 md:p-10">
@@ -33,19 +68,73 @@ const manualChecklist = [
       </div>
       <h2 class="mt-4 text-xl font-semibold text-white">Download Prism.app</h2>
       <p class="mt-2 text-sm leading-relaxed text-white/50">
-        Open the app and click <strong class="text-white/70">Set up Prism</strong>. It installs the MCP server from
-        <a href="https://pypi.org/project/dataset-analysis-mcp/" class="text-prism-lime hover:underline">PyPI</a>,
-        writes your Claude config, copies sample data, and runs a health check — no Terminal needed.
+        The menu bar app shows a checklist, progress for each automated step, and macOS notifications so you always know what is happening.
       </p>
       <a href={dmgUrl} class="btn-primary mt-6 inline-flex">Download for Mac</a>
-      <ol class="mt-8 space-y-3 text-sm text-white/70">
-        {easySteps.map((step, index) => (
-          <li class="flex gap-3">
-            <span class="step-number !mb-0 h-7 w-7 shrink-0 text-xs">{index + 1}</span>
-            <span>{step}</span>
+    </div>
+
+    <div class="reveal mt-6 glass-card p-8">
+      <h2 class="text-xl font-semibold text-white">Before you start</h2>
+      <p class="mt-2 text-sm text-white/50">Have these ready before clicking Set up Prism.</p>
+      <div class="mt-6 space-y-4">
+        {beforeYouStart.map((item, index) => (
+          <div class="rounded-xl border border-white/[0.06] bg-white/[0.03] px-4 py-4">
+            <div class="flex gap-3">
+              <span class="step-number !mb-0 h-7 w-7 shrink-0 text-xs">{index + 1}</span>
+              <div>
+                <p class="font-medium text-white/85">{item.title}</p>
+                <p class="mt-1 text-sm text-white/55">{item.body}</p>
+                {item.link && (
+                  <a href={item.link.href} class="mt-2 inline-block text-sm text-prism-lime hover:underline" target="_blank" rel="noopener">
+                    {item.link.label}
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="reveal mt-6 glass-card p-8">
+      <h2 class="text-xl font-semibold text-white">Prism does this automatically</h2>
+      <p class="mt-2 text-sm text-white/50">After you click Set up Prism — no Terminal needed.</p>
+      <ul class="mt-5 space-y-2 text-sm text-white/70">
+        {prismAutomates.map((item) => (
+          <li class="flex gap-2">
+            <span class="text-prism-lime">✓</span>
+            <span>{item}</span>
           </li>
         ))}
-      </ol>
+      </ul>
+    </div>
+
+    <div class="reveal mt-6 glass-card p-8">
+      <h2 class="text-xl font-semibold text-white">You still need to do this</h2>
+      <p class="mt-2 text-sm text-white/50">Prism cannot do these for you — the app will remind you when setup finishes.</p>
+      <div class="mt-6 space-y-4">
+        {youStillDo.map((item, index) => (
+          <div class="rounded-xl border border-amber-400/20 bg-amber-400/[0.05] px-4 py-4">
+            <div class="flex gap-3">
+              <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-amber-400/30 text-xs font-medium text-amber-200">
+                {index + 1}
+              </span>
+              <div>
+                <p class="font-medium text-white/85">{item.title}</p>
+                <p class="mt-1 text-sm text-white/55">{item.body}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <div class="reveal mt-10 glass-card p-8">
+      <div class="step-number mb-5">✦</div>
+      <h2 class="text-xl font-semibold">Starter prompt</h2>
+      <p class="mt-2 text-sm text-white/50">Copy this into Claude after you reopen it.</p>
+      <pre class="code-block mt-4 text-xs" id="starter-prompt">{starterPrompt}</pre>
+      <button class="btn-secondary mt-4 !px-5 !py-2.5 !text-xs" data-copy="#starter-prompt">Copy starter prompt</button>
     </div>
 
     <div class="reveal mt-6 glass-card p-8">
@@ -63,13 +152,6 @@ const manualChecklist = [
           </div>
         ))}
       </div>
-    </div>
-
-    <div class="reveal mt-10 glass-card p-8">
-      <div class="step-number mb-5">✦</div>
-      <h2 class="text-xl font-semibold">Your first 5 minutes</h2>
-      <pre class="code-block mt-4 text-xs" id="starter-prompt">Load ~/datasets/sample_sales.csv and run a data quality check</pre>
-      <button class="btn-secondary mt-4 !px-5 !py-2.5 !text-xs" data-copy="#starter-prompt">Copy starter prompt</button>
     </div>
 
     <details class="faq-item reveal mt-10 p-8">

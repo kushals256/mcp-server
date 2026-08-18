@@ -17,9 +17,9 @@ const prompts = [
 ];
 
 const steps = [
-  { title: 'Download', body: 'Get the DMG, drag Prism to Applications, and open the app.' },
-  { title: 'One click', body: 'Click Set up Prism — it installs everything and configures Claude for you.' },
-  { title: 'Analyze', body: 'Quit Claude (Cmd+Q), reopen it, and ask Claude to work on your CSV.' },
+  { title: 'Before you start', body: 'DMG → Applications, Python 3.10+, and Claude Desktop installed.' },
+  { title: 'One click in Prism', body: 'Open Prism, review the checklist, click Set up Prism — progress and notifications guide you.' },
+  { title: 'Finish in Claude', body: 'Quit Claude (Cmd+Q), reopen it, and paste the starter prompt.' },
 ];
 
 const trust = ['Data never in chat', 'Version history', 'ML guardrails', 'Runs locally'];
@@ -111,7 +111,7 @@ const trust = ['Data never in chat', 'Version history', 'ML guardrails', 'Runs l
       <SectionHeader
         label="Getting started"
         title="How it works"
-        subtitle="From install to first analysis in under five minutes."
+        subtitle="From install to first analysis in under five minutes. Prism shows what it automates and what you still do manually."
         centered={true}
       />
     </div>

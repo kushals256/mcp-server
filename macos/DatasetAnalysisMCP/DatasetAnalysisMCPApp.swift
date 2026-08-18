@@ -17,6 +17,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var setupWindowController: SetupWindowController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NotificationManager.shared.requestAuthorization()
+
         statusBarController = StatusBarController(
             onRequestSetup: { [weak self] in
                 self?.showSetupWindow()

@@ -104,13 +104,19 @@ final class StatusBarController {
 
     @objc private func disableServer() {
         configManager.disableServer()
-        notify(title: "Server Disabled", body: "Quit and reopen Claude Desktop to apply.")
+        NotificationManager.shared.notify(
+            title: "Server Disabled",
+            body: "Quit and reopen Claude Desktop to apply."
+        )
         refreshStatus()
     }
 
     @objc private func enableServer() {
         configManager.enableServer()
-        notify(title: "Server Enabled", body: "Quit and reopen Claude Desktop to connect.")
+        NotificationManager.shared.notify(
+            title: "Server Enabled",
+            body: "Quit and reopen Claude Desktop to connect."
+        )
         refreshStatus()
     }
 
@@ -124,10 +130,10 @@ final class StatusBarController {
     }
 
     @objc private func copyStarterPrompt() {
-        let prompt = "Load ~/datasets/sample_sales.csv and run a data quality check"
+        let prompt = SetupWindowController.starterPrompt
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(prompt, forType: .string)
-        notify(title: "Copied", body: "Starter prompt copied to clipboard.")
+        NotificationManager.shared.notify(title: "Copied", body: "Starter prompt copied to clipboard.")
     }
 
     @objc private func openDocs() {
@@ -142,13 +148,6 @@ final class StatusBarController {
 
     @objc private func quit() {
         NSApp.terminate(nil)
-    }
-
-    private func notify(title: String, body: String) {
-        let notification = NSUserNotification()
-        notification.title = title
-        notification.informativeText = body
-        NSUserNotificationCenter.default.deliver(notification)
     }
 }
 

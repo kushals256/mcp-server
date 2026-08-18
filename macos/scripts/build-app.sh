@@ -22,6 +22,7 @@ swiftc "$SRC_DIR"/*.swift \
   -o "$BUILD_DIR/$BINARY_NAME" \
   -framework AppKit \
   -framework Foundation \
+  -framework UserNotifications \
   -parse-as-library
 
 echo "Creating app bundle..."
