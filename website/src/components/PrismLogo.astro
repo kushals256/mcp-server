@@ -1,0 +1,40 @@
+---
+interface Props {
+  size?: 'sm' | 'md' | 'lg' | 'hero';
+  showWordmark?: boolean;
+  subtitle?: boolean;
+  framed?: boolean;
+}
+
+const { size = 'md', showWordmark = true, subtitle = false, framed = true } = Astro.props;
+const imageSizes = {
+  sm: 'h-8 w-8',
+  md: 'h-10 w-10',
+  lg: 'h-14 w-14',
+  hero: 'h-56 w-56 md:h-72 md:w-72',
+};
+const framePadding = {
+  sm: 'p-1',
+  md: 'p-1.5',
+  lg: 'p-2',
+  hero: 'p-4 md:p-5',
+};
+const textSizes = { sm: 'text-base', md: 'text-lg', lg: 'text-3xl', hero: 'text-3xl' };
+const imageSrc = size === 'hero' ? '/prism-logo-hero.png' : '/prism-logo.png';
+---
+
+<div class="flex items-center gap-3">
+  {framed ? (
+    <div class="logo-frame {framePadding[size]}">
+      <img src={imageSrc} alt="Prism logo" class={`${imageSizes[size]} shrink-0 object-contain`} />
+    </div>
+  ) : (
+    <img src={imageSrc} alt="Prism logo" class={`${imageSizes[size]} shrink-0 rounded-[18px] object-contain`} />
+  )}
+  {showWordmark && (
+    <div class="leading-tight">
+      <div class={`${textSizes[size]} font-semibold tracking-tight text-white`}>Prism</div>
+      {subtitle && <div class="text-xs text-white/55">Dataset Analysis MCP for Mac</div>}
+    </div>
+  )}
+</div>

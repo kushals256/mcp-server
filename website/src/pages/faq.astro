@@ -1,0 +1,49 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+
+const faqs = [
+  {
+    q: 'Is this Mac-only?',
+    a: 'Official support is macOS only. The website, setup wizard, and menu bar companion are built for Mac users running Claude Desktop.',
+  },
+  {
+    q: 'Does my data leave my Mac?',
+    a: 'No. The MCP server runs locally on your machine. Your datasets stay in folders you control, like ~/datasets.',
+  },
+  {
+    q: 'How do I know the server is active?',
+    a: 'Look for the Prism icon in your menu bar. It lights up when Claude has connected to the MCP server process.',
+  },
+  {
+    q: 'How do I turn it off?',
+    a: 'Click the menu bar icon and choose Disable Server, or run dataset-analysis-mcp-disable in Terminal.',
+  },
+  {
+    q: 'Setup failed — what now?',
+    a: 'Run dataset-analysis-mcp-doctor. It prints exactly what is missing and where to look in the install log.',
+  },
+];
+---
+
+<BaseLayout title="FAQ — Prism" description="Frequently asked questions about Prism on Mac.">
+  <section class="page-hero mx-auto max-w-3xl px-6 pb-20">
+    <div class="reveal">
+      <SectionHeader
+        label="Support"
+        title="Frequently asked questions"
+        subtitle="Everything you need to know about installing and using Prism on Mac."
+        centered={true}
+      />
+    </div>
+
+    <div class="reveal mt-14 space-y-4">
+      {faqs.map((item) => (
+        <details class="faq-item p-6 md:p-7">
+          <summary>{item.q}</summary>
+          <p class="mt-4 leading-relaxed text-white/55">{item.a}</p>
+        </details>
+      ))}
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,18 @@
+{
+  "images": [
+    {
+      "filename": "menubar-active.png",
+      "idiom": "mac",
+      "scale": "1x"
+    },
+    {
+      "filename": "menubar-active@2x.png",
+      "idiom": "mac",
+      "scale": "2x"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  }
+}

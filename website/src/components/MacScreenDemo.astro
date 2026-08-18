@@ -1,0 +1,54 @@
+---
+const pills = [
+  { icon: '📂', label: 'Load dataset' },
+  { icon: '✓', label: 'Quality check' },
+  { icon: '↗', label: 'Remove outliers' },
+  { icon: '⊞', label: 'Train/test split' },
+  { icon: '↓', label: 'Export CSV' },
+];
+---
+
+<div class="mac-frame">
+  <div class="mac-chrome">
+    <div class="mac-traffic">
+      <span class="mac-dot mac-dot-red"></span>
+      <span class="mac-dot mac-dot-yellow"></span>
+      <span class="mac-dot mac-dot-green"></span>
+    </div>
+    <div class="mac-url">claude.ai</div>
+  </div>
+
+  <div class="mac-screen">
+    <div class="mac-screen-inner">
+      <p class="mac-greeting">Your data, ready for Claude</p>
+
+      <div class="mac-toast-wrap">
+        <div class="mac-toast">
+          <span>Prism has 28 tools — just ask Claude</span>
+          <span class="mac-toast-dismiss" aria-hidden="true">×</span>
+        </div>
+      </div>
+
+      <div class="mac-input">
+        <span class="mac-input-plus" aria-hidden="true">+</span>
+        <span class="mac-input-placeholder">Clean my sales CSV and find outliers</span>
+        <span class="mac-input-model">Sonnet · Prism MCP</span>
+      </div>
+
+      <div class="mac-pills">
+        {pills.map((pill) => (
+          <span class="mac-pill">
+            <span class="mac-pill-icon" aria-hidden="true">{pill.icon}</span>
+            {pill.label}
+          </span>
+        ))}
+      </div>
+    </div>
+
+    <div class="mac-dock" aria-hidden="true">
+      {Array.from({ length: 5 }).map(() => (
+        <span class="mac-dock-icon"></span>
+      ))}
+    </div>
+  </div>
+</div>

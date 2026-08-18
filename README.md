@@ -1,5 +1,7 @@
 <p align="center">
-  <h1 align="center">🧙‍♂️ Dataset Analysis MCP Server</h1>
+  <img src="brand/source/prism-logo.png" alt="Prism logo" width="120" />
+  <h1 align="center">Prism</h1>
+  <p align="center"><strong>Dataset Analysis MCP for Mac</strong></p>
   <p align="center">
     <strong>A stateful Model Context Protocol server that turns LLMs into data scientists.</strong>
   </p>
@@ -19,29 +21,48 @@ The server maintains **in-memory state** across tool calls, so the LLM doesn't n
 
 ---
 
-## ⚡ Quick Start
+## ⚡ Quick Start (macOS)
+
+**Website:** [kushals256.github.io/mcp-server](https://kushals256.github.io/mcp-server/) · **Download:** [Latest release](https://github.com/kushals256/mcp-server/releases/latest)
 
 ```bash
-# Clone & setup
-git clone <repository_url> && cd mcp-server
-uv sync  # or: pip install -r requirements.txt
-
-# Run
-source .venv/bin/activate
-python main.py
+# Recommended
+pip install dataset-analysis-mcp
+dataset-analysis-mcp-setup
+dataset-analysis-mcp-doctor
 ```
 
-### Claude Desktop Config
+Then quit Claude Desktop (Cmd+Q), reopen it, and try:
+
+```text
+Load ~/datasets/sample_sales.csv and run a data quality check
+```
+
+### Menu bar companion
+
+The setup wizard can install a native Mac menu bar app. When active, a chart icon appears in your menu bar — click it to disable the server, open your data folder, or run a health check.
+
+### Claude Desktop config (auto-written by setup)
 
 ```json
 {
   "mcpServers": {
     "dataset-analysis": {
-      "command": "/path/to/.venv/bin/python",
-      "args": ["/path/to/mcp-server/main.py"]
+      "command": "uvx",
+      "args": ["dataset-analysis-mcp"],
+      "env": { "MCP_DATA_DIR": "~/datasets" }
     }
   }
 }
+```
+
+### Developer setup
+
+```bash
+git clone <repository_url> && cd mcp-server
+uv sync
+source .venv/bin/activate
+python main.py
 ```
 
 ---

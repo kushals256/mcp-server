@@ -100,4 +100,6 @@ mcp.tool()(rollback_version)
 mcp.tool()(diff_versions)
 
 if __name__ == "__main__":
-    mcp.run()
+    from cli import run_server
+
+    run_server()

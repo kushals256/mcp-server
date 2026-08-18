@@ -29,6 +29,13 @@ env/
 .DS_Store
 Thumbs.db
 
+# Build artifacts
+macos/build/
+website/node_modules/
+website/dist/
+website/.astro/
+.venv-brand/
+
 # Project-specific
 data/*
 !data/.gitkeep

@@ -1,0 +1,169 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+import ChatDemo from '../components/ChatDemo.astro';
+import MacScreenDemo from '../components/MacScreenDemo.astro';
+
+const prompts = [
+  'Find outliers in my sales CSV',
+  'Normalize messy category names before encoding',
+  'Split for ML and export the pipeline config',
+  'What quality issues does this dataset have?',
+];
+
+const steps = [
+  { title: 'Install', body: 'Download the .dmg or run pip install, then launch the setup wizard.' },
+  { title: 'Connect', body: 'The wizard configures Claude Desktop and installs the menu bar companion.' },
+  { title: 'Analyze', body: 'Load a CSV and ask Claude to clean, explore, and prepare your data.' },
+];
+
+const stats = [
+  { label: 'MCP tools', value: '28' },
+  { label: 'Test suites', value: '18' },
+  { label: 'Encoding methods', value: '8' },
+];
+
+const trust = ['28 specialized tools', 'Runs locally', 'No data leaves Mac'];
+---
+
+<BaseLayout>
+  <!-- Hero -->
+  <section class="relative mx-auto max-w-6xl px-6 pb-24 pt-20 md:pb-32 md:pt-28">
+    <div class="grid items-center gap-16 lg:grid-cols-2 lg:gap-12">
+      <div class="reveal">
+        <span class="eyebrow">
+          <span class="h-1.5 w-1.5 rounded-full bg-prism-lime"></span>
+          Built for Mac
+        </span>
+        <h1 class="section-title mt-8">
+          Turn Claude into your<br />
+          <span class="text-gradient">data scientist</span>
+        </h1>
+        <p class="section-subtitle">
+          Prism is a stateful MCP server with 28 specialized tools for cleaning, exploring, encoding, and preparing datasets — without copy-pasting DataFrames.
+        </p>
+        <div class="mt-10 flex flex-wrap gap-4">
+          <a href="/install" class="btn-primary">Download for Mac</a>
+          <a href="https://github.com/kushals256/mcp-server" class="btn-secondary">View on GitHub</a>
+        </div>
+        <div class="mt-8 flex flex-wrap gap-3">
+          {trust.map((item) => (
+            <span class="trust-pill">{item}</span>
+          ))}
+        </div>
+      </div>
+
+      <div class="reveal reveal-delay-2">
+        <ChatDemo />
+      </div>
+    </div>
+  </section>
+
+  <!-- Prompts -->
+  <section class="mx-auto max-w-6xl px-6 py-20">
+    <div class="reveal">
+      <SectionHeader
+        label="Starter prompts"
+        title="Ask Claude things like"
+        subtitle="Natural language in, structured data work out. No boilerplate scripts."
+      />
+    </div>
+    <div class="mt-12 grid gap-4 md:grid-cols-2">
+      {prompts.map((prompt, i) => (
+        <div class={`prompt-card reveal reveal-delay-${(i % 3) + 1}`}>
+          <p class="relative pr-8 text-white/85">{prompt}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Mac screen -->
+  <section class="mx-auto max-w-5xl px-6 py-24">
+    <div class="reveal text-center">
+      <SectionHeader
+        label="On your Mac"
+        title="Feels native in Claude"
+        subtitle="Ask in plain English — Prism handles the data work behind the scenes."
+        centered={true}
+      />
+    </div>
+    <div class="reveal mt-14">
+      <MacScreenDemo />
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="mx-auto max-w-6xl px-6 py-20">
+    <div class="reveal">
+      <SectionHeader
+        label="Getting started"
+        title="How it works"
+        subtitle="From install to first analysis in under five minutes."
+        centered={true}
+      />
+    </div>
+    <div class="mt-14 grid gap-6 md:grid-cols-3">
+      {steps.map((step, index) => (
+        <div class={`step-card reveal reveal-delay-${index + 1}`}>
+          <div class="step-number">0{index + 1}</div>
+          <h3 class="text-xl font-semibold text-white">{step.title}</h3>
+          <p class="mt-3 leading-relaxed text-white/55">{step.body}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="mx-auto max-w-6xl px-6 py-20">
+    <div class="glass-strong reveal overflow-hidden p-10 md:p-14">
+      <div class="relative z-10">
+        <SectionHeader
+          label="Why Prism"
+          title="Built for real data work"
+          subtitle="Purpose-built tools, not generic code execution."
+        />
+        <div class="mt-12 grid gap-5 md:grid-cols-3">
+          {stats.map((stat) => (
+            <div class="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-8 text-center">
+              <div class="stat-number">{stat.value}</div>
+              <div class="mt-2 text-sm text-white/50">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+        <div class="mt-14 space-y-6">
+          <div>
+            <div class="mb-3 flex justify-between text-sm text-white/55">
+              <span>Generic Python in chat</span>
+              <span class="text-white/35">4 approaches</span>
+            </div>
+            <div class="stat-bar-track">
+              <div class="stat-bar-fill" style="width: 28%"></div>
+            </div>
+          </div>
+          <div>
+            <div class="mb-3 flex justify-between text-sm text-white/55">
+              <span class="font-medium text-white/75">Prism MCP</span>
+              <span class="text-prism-lime">28 tools</span>
+            </div>
+            <div class="stat-bar-track">
+              <div class="stat-bar-fill" style="width: 100%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="mx-auto max-w-6xl px-6 py-20 pb-28">
+    <div class="cta-band reveal flex flex-col items-start justify-between gap-8 md:flex-row md:items-center">
+      <div class="relative z-10">
+        <h2 class="text-3xl font-semibold tracking-tight text-white md:text-4xl">
+          Stop copy-pasting DataFrames.
+        </h2>
+        <p class="mt-3 text-lg text-white/55">Install on Mac, connect Claude, and start analyzing.</p>
+      </div>
+      <a href="/install" class="btn-primary relative z-10 shrink-0">Download for Mac</a>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,21 @@
+---
+---
+
+<div class="chat-demo">
+  <div class="chat-demo-header">
+    <span class="h-3 w-3 rounded-full bg-[#ff5f57]"></span>
+    <span class="h-3 w-3 rounded-full bg-[#febc2e]"></span>
+    <span class="h-3 w-3 rounded-full bg-[#28c840]"></span>
+    <span class="ml-3 text-xs text-white/40">Claude · Prism MCP</span>
+  </div>
+  <div class="space-y-3 p-5">
+    <div class="chat-bubble-user">Clean sales.csv and find outliers in revenue</div>
+    <div class="chat-bubble-tool">→ load_dataset("sales.csv")</div>
+    <div class="chat-bubble-tool">→ detect_data_quality_issues()</div>
+    <div class="chat-bubble-tool-active">→ remove_outliers(column="revenue")</div>
+    <div class="mt-2 flex items-center gap-2 px-1 text-xs text-white/35">
+      <span class="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-prism-lime"></span>
+      3 tools called · dataset ready
+    </div>
+  </div>
+</div>

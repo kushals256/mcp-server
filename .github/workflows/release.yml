@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  python:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Install dependencies
+        run: uv sync --dev
+      - name: Run tests
+        run: uv run pytest tests/ -q
+      - name: Build package
+        run: uv build
+      - name: Build menu bar app
+        run: bash macos/scripts/build-app.sh
+      - name: Build dmg
+        run: bash macos/scripts/build-dmg.sh
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*
+            macos/build/DatasetAnalysisMCP.dmg
+
+  website:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install and build website
+        working-directory: website
+        run: |
+          npm install
+          npm run build
+      - name: Upload site artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-dist
+          path: website/dist

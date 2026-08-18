@@ -1,19 +1,22 @@
 [project]
-name = "mcp-server"
+name = "dataset-analysis-mcp"
 version = "0.1.0"
-description = "A Model Context Protocol server for comprehensive dataset analysis with stateful workflow support"
+description = "A stateful Model Context Protocol server that turns LLMs into data scientists on macOS"
 readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
 authors = [
-    { name = "Your Name", email = "your.email@example.com" }
+    { name = "Dataset Analysis MCP Contributors", email = "hello@example.com" }
 ]
-keywords = ["mcp", "dataset-analysis", "data-quality", "eda", "outlier-detection"]
+keywords = ["mcp", "dataset-analysis", "data-quality", "eda", "outlier-detection", "claude", "macos"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
+    "Operating System :: MacOS",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 
 dependencies = [
@@ -33,6 +36,18 @@ dependencies = [
     "uvicorn>=0.40.0",
 ]
 
+[project.urls]
+Homepage = "https://kushals256.github.io/mcp-server/"
+Repository = "https://github.com/kushals256/mcp-server"
+Documentation = "https://kushals256.github.io/mcp-server/install/"
+
+[project.scripts]
+dataset-analysis-mcp = "cli:run_server"
+dataset-analysis-mcp-setup = "cli:run_setup"
+dataset-analysis-mcp-doctor = "cli:run_doctor"
+dataset-analysis-mcp-disable = "cli:run_disable"
+dataset-analysis-mcp-enable = "cli:run_enable"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
@@ -47,8 +62,23 @@ packages = ["tools", "utils"]
 [tool.hatch.build.targets.wheel.force-include]
 "main.py" = "main.py"
 "config.py" = "config.py"
+"cli.py" = "cli.py"
+"examples/sample_sales.csv" = "examples/sample_sales.csv"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "main.py",
+    "config.py",
+    "cli.py",
+    "tools",
+    "utils",
+    "examples",
+    "macos",
+    "website",
+    "README.md",
+    "requirements.txt",
+]
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
-

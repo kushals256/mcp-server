@@ -17,7 +17,7 @@ def test_mcp_server_initialization():
     from main import mcp
 
     assert mcp is not None, "MCP server should be initialized"
-    assert mcp.name == "Dataset Analysis MCP", "Server name should match"
+    assert mcp.name == "Prism", "Server name should match"
 
 
 def test_all_tools_registered():

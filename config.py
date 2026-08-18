@@ -27,7 +27,7 @@ SUPPORTED_LOAD_EXTENSIONS = {".csv", ".json", ".parquet", ".xlsx"}
 # ============================================================================
 
 # MCP Server name
-SERVER_NAME = "Dataset Analysis MCP"
+SERVER_NAME = "Prism"
 
 # ============================================================================
 # Data Quality Detection Parameters

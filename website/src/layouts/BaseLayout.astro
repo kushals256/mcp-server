@@ -1,0 +1,107 @@
+---
+import '../styles/global.css';
+import PrismLogo from '../components/PrismLogo.astro';
+
+const { title = 'Prism', description = 'Turn Claude into your data scientist on Mac.' } = Astro.props;
+const pageTitle = title === 'Prism' ? 'Prism — Dataset Analysis MCP for Mac' : title;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content="/og-image.png" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>{pageTitle}</title>
+  </head>
+  <body class="min-h-screen">
+    <div class="ambient" aria-hidden="true">
+      <div class="orb orb-purple"></div>
+      <div class="orb orb-lime"></div>
+    </div>
+
+    <div class="page-wrap">
+      <header class="glass-nav sticky top-0 z-50">
+        <nav class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <a href="/" class="transition opacity-90 hover:opacity-100">
+            <PrismLogo size="sm" subtitle={false} />
+          </a>
+          <div class="hidden items-center gap-8 md:flex">
+            <a href="/install" class="nav-link">Install</a>
+            <a href="/docs" class="nav-link">Docs</a>
+            <a href="/faq" class="nav-link">FAQ</a>
+            <a href="/install" class="btn-primary !px-5 !py-2.5 !text-xs">Download for Mac</a>
+          </div>
+          <a href="/install" class="btn-primary !px-4 !py-2 !text-xs md:hidden">Download</a>
+        </nav>
+      </header>
+
+      <main>
+        <slot />
+      </main>
+
+      <footer class="border-t border-white/[0.06] bg-black/20">
+        <div class="mx-auto grid max-w-6xl gap-10 px-6 py-16 md:grid-cols-4">
+          <div class="md:col-span-2">
+            <PrismLogo size="sm" subtitle={true} />
+            <p class="mt-4 max-w-sm text-sm leading-relaxed text-white/45">
+              Stateful MCP server for dataset analysis. Your data stays on your Mac — always.
+            </p>
+          </div>
+          <div>
+            <p class="mb-4 text-xs font-semibold uppercase tracking-widest text-white/35">Product</p>
+            <div class="flex flex-col gap-2 text-sm">
+              <a href="/install" class="btn-ghost w-fit">Install</a>
+              <a href="/docs" class="btn-ghost w-fit">Documentation</a>
+              <a href="/faq" class="btn-ghost w-fit">FAQ</a>
+            </div>
+          </div>
+          <div>
+            <p class="mb-4 text-xs font-semibold uppercase tracking-widest text-white/35">Specs</p>
+            <div class="space-y-2 text-sm text-white/45">
+              <p>macOS · Python 3.10+</p>
+              <p>MCP 1.26+ · 28 tools</p>
+              <p>Local-first · No cloud</p>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-white/[0.04] px-6 py-6 text-center text-xs text-white/30">
+          © {new Date().getFullYear()} Prism · Built for Mac
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      document.querySelectorAll('[data-copy]').forEach((button) => {
+        button.addEventListener('click', async () => {
+          const target = button.getAttribute('data-copy');
+          const node = target ? document.querySelector(target) : null;
+          if (!node) return;
+          await navigator.clipboard.writeText(node.textContent?.trim() || '');
+          const original = button.textContent;
+          button.textContent = 'Copied ✓';
+          setTimeout(() => (button.textContent = original), 1500);
+        });
+      });
+
+      const revealObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('visible');
+              revealObserver.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+      );
+
+      document.querySelectorAll('.reveal').forEach((el) => revealObserver.observe(el));
+    </script>
+  </body>
+</html>

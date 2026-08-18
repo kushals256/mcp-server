@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionHeader from '../components/SectionHeader.astro';
+
+const tools = [
+  'load_dataset', 'describe_dataset', 'detect_data_quality_issues', 'correlation_analysis',
+  'handle_missing_values', 'remove_outliers', 'encode_categorical_feature', 'train_test_split',
+  'normalize_categorical_text', 'harmonize_categorical_values', 'validate_action', 'save_processed_dataset',
+];
+---
+
+<BaseLayout title="Docs — Prism" description="Tools and usage for Prism on Mac.">
+  <section class="page-hero mx-auto max-w-5xl px-6 pb-20">
+    <div class="reveal">
+      <SectionHeader
+        label="Documentation"
+        title="Prism Docs"
+        subtitle="28 tools across discovery, analysis, transformation, feature engineering, validation, and versioning."
+      />
+    </div>
+
+    <div class="reveal mt-12 glass-strong p-8 md:p-10">
+      <h2 class="text-xl font-semibold text-white">Example workflow</h2>
+      <ol class="mt-6 space-y-4">
+        <li class="flex gap-4 text-white/70">
+          <span class="step-number !mb-0 shrink-0">1</span>
+          <span>Load a file with <code class="font-mono text-prism-lime">load_dataset("~/Downloads/sales.csv")</code></span>
+        </li>
+        <li class="flex gap-4 text-white/70">
+          <span class="step-number !mb-0 shrink-0">2</span>
+          <span>Run <code class="font-mono text-prism-lime">detect_data_quality_issues</code></span>
+        </li>
+        <li class="flex gap-4 text-white/70">
+          <span class="step-number !mb-0 shrink-0">3</span>
+          <span>Clean with <code class="font-mono text-prism-lime">handle_missing_values</code> and <code class="font-mono text-prism-lime">remove_outliers</code></span>
+        </li>
+        <li class="flex gap-4 text-white/70">
+          <span class="step-number !mb-0 shrink-0">4</span>
+          <span>Encode categories and split with <code class="font-mono text-prism-lime">train_test_split</code></span>
+        </li>
+        <li class="flex gap-4 text-white/70">
+          <span class="step-number !mb-0 shrink-0">5</span>
+          <span>Export with <code class="font-mono text-prism-lime">save_processed_dataset</code></span>
+        </li>
+      </ol>
+    </div>
+
+    <div class="reveal mt-14">
+      <p class="section-label">Tool reference</p>
+      <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {tools.map((tool) => (
+          <div class="tool-pill">{tool}</div>
+        ))}
+      </div>
+    </div>
+
+    <div class="reveal mt-10 glass-card p-8">
+      <h2 class="text-xl font-semibold">Configuration</h2>
+      <p class="mt-3 leading-relaxed text-white/55">
+        Set <code class="font-mono text-prism-lime">MCP_DATA_DIR</code> to control where datasets are saved. Default: <code class="font-mono text-white/70">~/datasets</code>
+      </p>
+    </div>
+  </section>
+</BaseLayout>
