@@ -44,28 +44,11 @@ final class SetupInstaller {
     }
 
     private func augmentedEnvironment() -> [String: String] {
-        var env = ProcessInfo.processInfo.environment
-        let home = FileManager.default.homeDirectoryForCurrentUser.path
-        let pathPrefix = "\(home)/.local/bin:/opt/homebrew/bin:/usr/local/bin"
-        env["PATH"] = "\(pathPrefix):" + (env["PATH"] ?? "")
-        return env
+        PythonLocator.augmentedEnvironment()
     }
 
     private func resolvePython() throws -> String {
-        let output = try runCommand(executable: "/usr/bin/env", arguments: ["python3", "--version"])
-        let versionLine = output.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let version = versionLine.split(separator: " ").last else {
-            throw SetupInstallerError.pythonMissing
-        }
-        let parts = version.split(separator: ".").compactMap { Int($0) }
-        guard parts.count >= 2 else {
-            throw SetupInstallerError.pythonMissing
-        }
-        if parts[0] < 3 || (parts[0] == 3 && parts[1] < 10) {
-            throw SetupInstallerError.pythonTooOld(String(version))
-        }
-        let which = try runCommand(executable: "/usr/bin/env", arguments: ["python3", "-c", "import sys; print(sys.executable)"])
-        return which.trimmingCharacters(in: .whitespacesAndNewlines)
+        try PythonLocator.resolve()
     }
 
     private func installPackage(python: String, onLog: @escaping (String) -> Void) throws {

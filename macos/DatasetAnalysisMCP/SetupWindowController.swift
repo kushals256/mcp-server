@@ -308,8 +308,9 @@ final class SetupWindowController: NSWindowController {
         updateManualStep(.installFromDMG, met: status.installedInApplications, icons: prereqIcons, labels: prereqLabels)
 
         switch status.python {
-        case .ok:
+        case .ok(let path):
             updateManualStep(.python, met: true, icons: prereqIcons, labels: prereqLabels)
+            prereqLabels[.python]?.stringValue = "Python 3.10+ found at \(path)"
         case .missing:
             updateManualStep(.python, met: false, icons: prereqIcons, labels: prereqLabels)
         case .tooOld(let version):
